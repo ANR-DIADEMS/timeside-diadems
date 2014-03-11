@@ -74,13 +74,14 @@ class IRITSpeechEntropy(Analyzer):
 
     def post_process(self):
         entropyValue = array(self.entropyValue)
-        w = self.modulLen/self.wStep
-	print w,len(entropyValue)
-        modulentropy = computeModulation(entropyValue, w, False)
 
 	import pylab
-	pylab.plot(modulentropy)
-	pylab.show()
+	pylab.plot(entropyValue)
+	pylab.show() 
+        w = self.modulLen/self.wStep
+        modulentropy = computeModulation(entropyValue, w, False)
+
+
 
         confEntropy = array(modulentropy - self.threshold) / self.threshold
         confEntropy[confEntropy > 1] = 1
