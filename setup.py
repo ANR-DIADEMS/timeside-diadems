@@ -62,7 +62,7 @@ setup(
         'py_sonicvisualiser',
         'pyannote.core',
         'pyannote.features',
-        'traits'
+        'traits',
         'networkx'
         ],
 
