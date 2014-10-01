@@ -88,7 +88,7 @@ class LimsiSad(Analyzer):
     """
     Limsi Speech Activity Detection Systems
     LimsiSad performs frame level speech activity detection based on trained GMM models
-    For each frame, it computes the log likelihood difference between a speech model and a non speech model. 
+    For each frame, it computes the log likelihood difference between a speech model and a non speech model.
     The highest is the estimate, the largest is the probability that the frame corresponds to speech.
     Dilatation and erosion procedures are used in a latter stage to obtain speech and non speech segments
 
@@ -99,9 +99,9 @@ class LimsiSad(Analyzer):
     * sad_segments: speech/non speech segments
     """
     implements(IAnalyzer)
-    
 
-    def __init__(self, sad_model, dews=0.2, speech_threshold=1., dllh_bounds=(-10., 10.)):
+
+    def __init__(self, sad_model='etape', dews=0.2, speech_threshold=1., dllh_bounds=(-10., 10.)):
         """
         Parameters:
         ----------

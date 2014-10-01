@@ -40,7 +40,7 @@ class IRITSingings(Analyzer):
     @interfacedoc
     def __init__(self):
         super(IRITSingings, self).__init__()
-        self.parents.append(IRITMonopoly())
+        self.parents['irit_monopoly'] = IRITMonopoly()
 
         self.block_read = 0
         self.pitches = []
@@ -103,11 +103,13 @@ class IRITSingings(Analyzer):
         """
 
         """
-        preproc = self.process_pipe.results.get_result_by_id('irit_monopoly.segments').data_object
-        labels = self.process_pipe.results.get_result_by_id('irit_monopoly.segments').data_object.label_metadata['label']
-        segments_monopoly = [(start, duration, labels[label])for start, duration, label in zip(preproc.time,
-                                                                                               preproc.duration,
-                                                                                               preproc.label)]
+        monopoly_results = self.parents['irit_monopoly'].results
+        preproc = monopoly_results['irit_monopoly.segments'].data_object
+        labels = preproc.label_metadata['label']
+        segments_monopoly = [(start, duration, labels[label])
+                             for start, duration, label
+                             in zip(preproc.time, preproc.duration,
+                                    preproc.label)]
         segments_chant = []
         for start, duration, label in segments_monopoly:
             cumulChant = 0
@@ -118,7 +120,8 @@ class IRITSingings(Analyzer):
                 for seg in segs:
                     if has_vibrato(seg[2], f0_frame_rate):
                         cumulChant += seg[1]-seg[0]
-                segments_chant += [(start, duration, cumulChant/duration >= self.thMono)]
+                segments_chant += [(start, duration,
+                                    cumulChant/duration >= self.thMono)]
 
             elif label == 'Poly':
                 pass
@@ -126,7 +129,6 @@ class IRITSingings(Analyzer):
                 pass
 
         return
-
 
 
 class SinusoidalSegment(object):

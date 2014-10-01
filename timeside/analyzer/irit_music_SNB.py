@@ -34,7 +34,7 @@ class IRITMusicSNB(Analyzer):
 
     def __init__(self, blocksize=1024, stepsize=None, samplerate=None):
         super(IRITMusicSNB, self).__init__()
-        self.parents.append(IRITDiverg())
+        self.parents['irit_diverg'] = IRITDiverg()
         self.wLen = 1.0
         self.wStep = 0.1
         self.threshold = 20
@@ -72,8 +72,8 @@ class IRITMusicSNB(Analyzer):
         '''
 
         '''
-
-        segList = self.process_pipe.results.get_result_by_id('irit_diverg.segments').time
+        res_irit_diverg = self.parents['irit_diverg'].results
+        segList = res_irit_diverg['irit_diverg.segments'].time
         w = self.wLen / 2
         end = segList[-1]
         tLine = arange(0, end, self.wStep)
@@ -90,7 +90,7 @@ class IRITMusicSNB(Analyzer):
 
         segLenRes.data_object.value = conf
 
-        self.process_pipe.results.add(segLenRes)
+        self.add_result(segLenRes)
 
         # Segment
         convert = {False: 0, True: 1}
@@ -112,7 +112,7 @@ class IRITMusicSNB(Analyzer):
         segs.data_object.duration = [tLine[s[1]] - tLine[s[0]]
                                      for s in segList]
 
-        self.process_pipe.results.add(segs)
+        self.add_result(segs)
         return
 
 

@@ -359,7 +359,7 @@ class IRITDiverg(Analyzer):
 
     def __init__(self, blocksize=1024, stepsize=None):
         super(IRITDiverg, self).__init__()
-        self.parents.append(Waveform())
+        self.parents['waveform'] = Waveform()
         self.ordre = 2
 
     @interfacedoc
@@ -390,7 +390,8 @@ class IRITDiverg(Analyzer):
         return frames, eod
 
     def post_process(self):
-        audio_data = self.process_pipe.results.get_result_by_id('waveform_analyzer').data
+
+        audio_data = self.parents['waveform'].results['waveform_analyzer'].data
         if audio_data.shape[1] > 1:
             data = list(audio_data.mean(axis=1))
         else:
@@ -407,5 +408,5 @@ class IRITDiverg(Analyzer):
         segs.data_object.label = [s[1] for s in frontieres]
         segs.data_object.time = [(float(s[0]) / self.samplerate())
                                  for s in frontieres]
-        self.process_pipe.results.add(segs)
+        self.add_result(segs)
         return

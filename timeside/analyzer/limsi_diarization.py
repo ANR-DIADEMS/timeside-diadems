@@ -68,7 +68,8 @@ def segment(data, minsize):
 class LimsiDiarization(Analyzer):
     implements(IAnalyzer)
 
-    def __init__(self, sad_analyzer = None, gdiff_win_size_sec=5., min_seg_size_sec=2.5, bic_penalty_coeff=0.5):
+    def __init__(self, sad_analyzer=None, gdiff_win_size_sec=5.,
+                 min_seg_size_sec=2.5, bic_penalty_coeff=0.5):
         super(LimsiDiarization, self).__init__()
 
         self.gdiff_win_size_sec = gdiff_win_size_sec
@@ -78,13 +79,12 @@ class LimsiDiarization(Analyzer):
         if sad_analyzer is None:
             sad_analyzer = LimsiSad('etape')
         self.sad_analyzer = sad_analyzer
-        self.parents.append(sad_analyzer)
+        self.parents['sad_analyzer'] = sad_analyzer
 
         # feature extraction defition
         spec = yaafelib.FeaturePlan(sample_rate=16000)
         spec.addFeature('mfccchop: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256')
-        parent_analyzer = Yaafe(spec)
-        self.parents.append(parent_analyzer)
+        self.parents['yaafe'] = Yaafe(spec)
 
         # informative parameters
         # these are not really taken into account by the system
@@ -116,9 +116,12 @@ class LimsiDiarization(Analyzer):
 
     def post_process(self):
         # extract mfcc with yaafe and store them to be used with pyannote
-        mfcc = self.process_pipe.results.get_result_by_id('yaafe.mfccchop')['data_object']['value']
+        print self.parents['yaafe'].results.keys()
+        res_yaafe = self.parents['yaafe'].results['yaafe.mfccchop']
+        mfcc = res_yaafe.data_object.value
 
-        sw = YaafeFrame(self.input_blocksize, self.input_stepsize, self.input_samplerate)
+        sw = YaafeFrame(self.input_blocksize, self.input_stepsize,
+                        self.input_samplerate)
         pyannotefeat = SlidingWindowFeature(mfcc, sw)
 
         # gaussian divergence window size
@@ -127,13 +130,16 @@ class LimsiDiarization(Analyzer):
         min_seg_size_frame = int(self.min_seg_size_sec / timestepsize)
 
         # speech activity detection
-        sadval = self.process_pipe.results.get_result_by_id(self.sad_analyzer.id() + '.sad_lhh_diff').data_object.value[:]
+        sad_analyzer = self.parents['sad_analyzer']
+        res_sad = sad_analyzer.results['limsi_sad.sad_lhh_diff']
+        sadval = res_sad.data_object.value[:]
         # indices of frames detected as speech
         speech_threshold = 0.
-        frameids = [i for i, val in enumerate(sadval) if val > speech_threshold]
+        frameids = [i for i, val in enumerate(sadval)
+                    if val > speech_threshold]
 
         # compute gaussian divergence of speech frames only
-        gdiff = gauss_div(mfcc[frameids,:], gdiff_win_size_frame)
+        gdiff = gauss_div(mfcc[frameids, :], gdiff_win_size_frame)
 
         # initial segmentation based on gaussian divergence criterion
         seg = segment(gdiff, min_seg_size_frame)
@@ -182,7 +188,7 @@ class LimsiDiarization(Analyzer):
                 duration[-1] = t + d - time[-1]
             lastlabel = l
 
-            
+
         # store diarisation result
         diar_res = self.new_result(data_mode='label', time_mode='segment')
         diar_res.id_metadata.id += '.' + 'speakers' # + name + 'diarisation'
@@ -193,5 +199,5 @@ class LimsiDiarization(Analyzer):
         diar_res.label_metadata.label = dict()
         for lab in diar_res.data_object.label:
             diar_res.label_metadata.label[lab] = str(lab)
-            
-        self.process_pipe.results.add(diar_res)
+
+        self.add_result(diar_res)
