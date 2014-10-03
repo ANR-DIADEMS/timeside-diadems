@@ -58,8 +58,8 @@ def segment(data, minsize):
         ret1 = ([0] * am)
     else:
         ret1 = segment(data[:(am-minsize)], minsize) + ([0] * minsize)
-    if (am + minsize - 1)>= len(data):
-        ret2 = ([0] * (len(data) -am -1))
+    if (am + minsize - 1) >= len(data):
+        ret2 = ([0] * (len(data) - am - 1))
     else:
         ret2 = ([0] * minsize) + segment(data[(am+minsize+1):], minsize)
     return (ret1 + [1] + ret2)
@@ -82,16 +82,15 @@ class LimsiDiarization(Analyzer):
         self.parents['sad_analyzer'] = sad_analyzer
 
         # feature extraction defition
-        spec = yaafelib.FeaturePlan(sample_rate=16000)
-        spec.addFeature('mfccchop: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256')
-        self.parents['yaafe'] = Yaafe(spec)
+        feature_plan = ['mfccchop: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256']
+        self.parents['yaafe'] = Yaafe(feature_plan=feature_plan,
+                                      input_samplerate=16000)
 
         # informative parameters
         # these are not really taken into account by the system
         # these are bypassed by yaafe feature plan
         self.input_blocksize = 1024
         self.input_stepsize = 256
-
 
     @staticmethod
     @interfacedoc
@@ -116,7 +115,6 @@ class LimsiDiarization(Analyzer):
 
     def post_process(self):
         # extract mfcc with yaafe and store them to be used with pyannote
-        print self.parents['yaafe'].results.keys()
         res_yaafe = self.parents['yaafe'].results['yaafe.mfccchop']
         mfcc = res_yaafe.data_object.value
 
@@ -196,8 +194,8 @@ class LimsiDiarization(Analyzer):
         diar_res.data_object.label = label
         diar_res.data_object.time = time
         diar_res.data_object.duration = duration
-        diar_res.label_metadata.label = dict()
+        diar_res.data_object.label_metadata.label = dict()
         for lab in diar_res.data_object.label:
-            diar_res.label_metadata.label[lab] = str(lab)
+            diar_res.data_object.label_metadata.label[lab] = str(lab)
 
         self.add_result(diar_res)

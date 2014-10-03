@@ -29,6 +29,8 @@ from numpy.fft import rfft
 from scipy.signal import firwin, lfilter
 from timeside.analyzer.preprocessors import frames_adapter
 
+from ..tools.parameters import Float, HasTraits
+
 
 class IRITSpeech4Hz(Analyzer):
 
@@ -48,6 +50,10 @@ class IRITSpeech4Hz(Analyzer):
     '''
 
     implements(IAnalyzer)
+
+    # Define Parameters
+    class _Param(HasTraits):
+        medfilt_duration = Float()
 
     @interfacedoc
     def __init__(self, medfilt_duration=5):
