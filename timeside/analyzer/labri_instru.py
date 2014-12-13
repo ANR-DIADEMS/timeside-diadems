@@ -31,7 +31,7 @@ from timeside.analyzer.preprocessors import frames_adapter
 ## plugin specific
 import sys, os
 REL_PATH='labri';
-PLUGIN_PATH=os.path.join(timeside.__path__[0], 'REL_PATH');
+PLUGIN_PATH=os.path.join(timeside.__path__[0], REL_PATH);
 sys.path.append(PLUGIN_PATH);
 sys.path.append(REL_PATH);		## can be commented
 import timbre_descriptor
