@@ -46,7 +46,7 @@ setup(
     long_description=open('README.rst').read(),
     author="Guillaume Pellerin, Paul Brossier, Thomas Fillon, Riccardo Zaccarelli, Olivier Guilyardi",
     author_email="yomguy@parisson.com, piem@piem.org, thomas@parisson.com, riccardo.zaccarelli@gmail.com, olivier@samalyse.com",
-    version='0.5.7',
+    version='0.6.2',
     install_requires=[
         'numpy',
         'mutagen',
@@ -57,7 +57,7 @@ setup(
         'simplejson',
         'scipy',
         'matplotlib',
-        'django>=1.4',
+        'django==1.6.8',
         'django-extensions',
         'djangorestframework',
         'south',
@@ -66,9 +66,7 @@ setup(
         'pyannote.features',
         'traits',
         'networkx',
-        'sphinx_rtd_theme',
-    ],
-
+        ],
     platforms=['OS Independent'],
     license='Gnu Public License V2',
     classifiers=CLASSIFIERS,
