@@ -34,7 +34,7 @@ REL_PATH='labri';
 PLUGIN_PATH=os.path.join(timeside.__path__[0], REL_PATH);
 sys.path.append(PLUGIN_PATH);
 sys.path.append(REL_PATH);		## can be commented
-import timbre_descriptor
+from timeside.analyzer.labri import timbre_descriptor
 import my_tools as mt
 import my_lda
 
@@ -57,7 +57,7 @@ class LABRIInstru(Analyzer):
 		self.repr_sigma	= numpy.squeeze(numpy.array(m['repr2'])) + 0.0; #+ mt.EPS
 		self.inst		= numpy.squeeze(numpy.array(m['inst']));   ## instrument name / structure
 		self.T_NOISE	= -60;		## noise threshold in dB
-		
+
 		self.container = AnalyzerResultContainer();
 		self.signal		= numpy.array([],float);
 		self.processed	= False;
@@ -67,7 +67,7 @@ class LABRIInstru(Analyzer):
 		self.cur_pos	= 0;
 		self.famille	= "";
 		self.jeu		= "";
-		
+
     @staticmethod
     @interfacedoc
     def id():
@@ -85,7 +85,7 @@ class LABRIInstru(Analyzer):
         return "Instrument name / index"
 
     def process(self, frames, eod=False):
-		
+
 		N = len(frames);
 		self.cur_pos += N;
 		time = (self.cur_pos - N/2.)/ self.Fs;	#current time
@@ -93,25 +93,25 @@ class LABRIInstru(Analyzer):
 
 		## wait until the end is reached to process file
 		if eod and not self.processed:
-			
+
 			desc = timbre_descriptor.compute_all_descriptor(self.signal, self.Fs);
 			param_val, self.field_name = timbre_descriptor.temporalmodeling(desc);
 			self.param_val = numpy.array([param_val[self.i_fs],]);
-			
+
 			## estimate instrument family
 			gr1, gr2, p1, p2 = my_lda.pred_lda(numpy.real(self.param_val)+mt.EPS, self.Vect, self.repr_mu, self.repr_sigma);
 			i_res = gr1[0];  ## use euclidean distance criterion as default
-			
+
 			self.famille = self.inst[i_res][0][0];
 			self.jeu 	= "";
 			if i_res > 0:
 				self.jeu = self.inst[i_res][1][0];
-			
-			## uncomment for debug	
+
+			## uncomment for debug
 			#print "Detected as ", self.famille," - ",self.jeu, " according to res1: res1=",gr1[0]," res2=", gr2[0],"p1=",p1[0]," p2=", p2[0],"\n\n";
 			self.result_param= numpy.array([gr1, gr2, p1, p2]);
 			self.result_data = self.famille+" - "+self.jeu;
-			
+
 			res1 	= self.new_result(data_mode='label', time_mode='global');
 			res1.id_metadata.id					+= '.' + 'instrument_label';
 			res1.id_metadata.name				+= ' ' + 'Instrument Label';
@@ -122,9 +122,9 @@ class LABRIInstru(Analyzer):
 			res2.id_metadata.id					+= '.' + 'instrument_label';
 			res2.id_metadata.name				+= ' ' + 'Instrument Label';
 			res2.data_object.value				= numpy.array([gr1, gr2]); ## instrument index
-			res2.data_object.y_value			= numpy.array([p1, p2]);   ## confidence value	
+			res2.data_object.y_value			= numpy.array([p1, p2]);   ## confidence value
 			self.results.add(res2);   ##store results as numeric in correct format ??
-			
+
 			self.processed = True;
 
 		return frames, eod;
