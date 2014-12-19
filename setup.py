@@ -6,6 +6,11 @@ from setuptools import setup
 import sys
 from setuptools.command.test import test as TestCommand
 
+try:
+    import multiprocessing  # Workaround for http://bugs.python.org/issue15881
+except ImportError:
+    pass
+
 
 # Pytest
 class PyTest(TestCommand):
