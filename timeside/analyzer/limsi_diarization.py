@@ -19,12 +19,12 @@
 
 # Author: David Doukhan <doukhan@limsi.fr>
 
-
+import timeside
 from timeside.core import implements, interfacedoc
 from timeside.analyzer.core import Analyzer
 from timeside.api import IAnalyzer
-from yaafe import Yaafe
-import yaafelib
+if not timeside._WITH_YAAFE:
+    raise ImportError('yaafelib must be missing')
 from timeside.analyzer.limsi_sad import LimsiSad
 import numpy as N
 import sys
