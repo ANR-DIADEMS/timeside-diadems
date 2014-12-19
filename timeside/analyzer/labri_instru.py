@@ -35,8 +35,8 @@ PLUGIN_PATH=os.path.join(timeside.__path__[0], REL_PATH);
 sys.path.append(PLUGIN_PATH);
 sys.path.append(REL_PATH);		## can be commented
 from timeside.analyzer.labri import timbre_descriptor
-import my_tools as mt
-import my_lda
+from timeside.analyzer.labri import my_tools as mt
+from timeside.analyzer.labri import my_lda
 
 class LABRIInstru(Analyzer):
     implements(IAnalyzer)
