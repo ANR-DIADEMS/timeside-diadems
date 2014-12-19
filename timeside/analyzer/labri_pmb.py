@@ -28,8 +28,7 @@ from timeside.api import IAnalyzer
 import timeside
 
 import yaafelib
-import numpy 
-import bob
+import numpy
 import os.path
 
 
@@ -43,17 +42,17 @@ def llh(gmm, x):
     m = numpy.amax(llh,1)
     dif = llh - numpy.atleast_2d(m).T
     return m + numpy.log(numpy.sum(numpy.exp(dif),1))
-        
+
 
 def viterbijl(x, gmmset, transition=None, initial=None, final=None,
         penalty=0, duration=1, debug=False):
     """
     Perform Viterbi decoding of data in array x using GMM models provided in gmmset list
-    
+
     Parameters:
     ----------
     x : ndarray (nb_frames, dim_frame)
-    gmmset : list of nbunits gmm.GMM models 
+    gmmset : list of nbunits gmm.GMM models
     transition : ndarray (nbunits, nbunits) with inter-models transition penalty
         or -inf if transition forbidden - default all transitions allowed
     initial : index (list) of initial model or None for all models - default to None (all models)
@@ -62,13 +61,13 @@ def viterbijl(x, gmmset, transition=None, initial=None, final=None,
     duration : minimum duration for each model as ndarray(nbunits) or scalar
         default 1 state duration for all models
     debug : output trace, default False
-    
+
     Returns:
     -------
     score : best cumulated LLH averaged by frame count
     decoding : list of segments (start-frame, frame-count, model-id)
     """
-    
+
     # check the GMM set
     nbunits = len(gmmset)
     if nbunits < 2:
@@ -76,25 +75,25 @@ def viterbijl(x, gmmset, transition=None, initial=None, final=None,
     for g in gmmset:
 #    	if not isinstance(g,gmm.GMM):
 #	    	raise Exception('Models not matching the GMM type')
-    
+
 	# if initial list is None, allow all models
 	if initial == None:
 		initial = range(nbunits)
 	else:
 	    initial = numpy.atleast_1d(initial)
-    
+
 	# if transition is not given, allow all transition with zero penalty except loop
     if transition == None:
     	transition = numpy.zeros((nbunits, nbunits), dtype=float)
     	numpy.fill_diagonal(transition, -inf)
     if transition.shape != (nbunits, nbunits):
     	raise Exception('Dimensions of transition square matrix %s is not matching the number of models %d' % (transition.shape,nbunits))
-    
+
     # if duration is a scalar, duplicate to all units
     duration += numpy.zeros((nbunits), dtype=int)
     if duration.shape != (nbunits,):
     	raise Exception('Dimension of duration array %s is not matching the number of models %d' % (transition.shape,nbunits))
-    
+
     # if penaly is a scalar, duplicate to all units
     penalty += numpy.zeros((nbunits),dtype=int)
 
@@ -109,72 +108,72 @@ def viterbijl(x, gmmset, transition=None, initial=None, final=None,
         nbstates += duration[i]
         exit[i] = nbstates - 1
     cumul = numpy.zeros((nbstates,2), dtype=float); cumul.fill(-inf)
-    
+
     # back_unit[t,i] is best incoming unit at frame t for unit i
     back_unit = numpy.zeros((len(x), nbunits), dtype=int); back_unit.fill(-1)
     # back_len[t,i] is internal length of best path finishing at frame t in unit i
     back_len = numpy.zeros((len(x), nbunits), dtype=int); back_len.fill(-1)
-    
+
     # pre-compute LLH values
     logl = numpy.zeros((len(x), nbunits), dtype=float)
     for i in range(nbunits):
         logl[:,i] = llh(gmmset[i],x)
-    
+
     # main Viterbi loop
     for t in range(len(x)):
         if t == 0:
-            # initial vector 
+            # initial vector
             for i in initial:
                 cumul[entry[i],1] = logl[t,i]
                 # for the case duration[i]==1
                 back_len[t,i] = 1
         else:
             for i in range(nbunits):
-                
+
                 # first state can enter from other units (as allowed by transition matrix)
                 entry_score = cumul[exit[:],0] + transition[:,i]
                 j = numpy.argmax(entry_score)
                 back_unit[t,i] = j
                 cumul[entry[i],1] = entry_score[j] - penalty[i]
-                
+
                 # intermediate states only accumulate llh from previous state
                 if (duration[i]>1):
                     cumul[entry[i]+1:exit[i]+1,1] = cumul[entry[i]:exit[i],0]
-                
+
                 # allow loop in last state of model
                 if cumul[exit[i],1] < cumul[exit[i],0]:
                     cumul[exit[i],1] = cumul[exit[i],0]
                     back_len[t,i] = back_len[t-1,i] + 1
                 else:
                     back_len[t,i] = duration[i]
-                
+
                 # add log-likelihood of frame for all states of current unit (only if necessary)
                 if numpy.max(cumul[entry[i]:exit[i]+1,1]) > -inf:
                     cumul[entry[i]:exit[i]+1,1] += logl[t,i]
-                
+
         # shift cumulated matrix
         cumul=numpy.roll(cumul,-1,axis=1)
-        
+
         # beam search
         #if beam > 0:
         #    cutoff = cumul[:,0].max() - beam
         #    cumul[cumul[:,0] < cutoff,:] = -inf
-        
+
         if debug:
             numpy.set_printoptions(precision=1,linewidth=200)
             print 't',t, 'cumul',cumul[:,0], 'len',back_len[t,:], 'unit',back_unit[t,:]
             #raw_input('press return')
-        
+
     # select best final model
     if final == None:
         i = numpy.argmax(cumul[exit[:],0])
     else:
         i = final
-    
+
     # best score (averaged by frame count)
     t = len(x)
     score = cumul[exit[i],0] / t
-    
+
     # build backtrace
     backtrace = []
     while t > 0:
@@ -188,7 +187,7 @@ def viterbijl(x, gmmset, transition=None, initial=None, final=None,
         i = back_unit[t,i]
     # reverse to chronological order
     backtrace.reverse()
-    
+
     return score, backtrace
 
 
@@ -218,7 +217,7 @@ class LabriPMB(Analyzer):
         spec.addFeature('e_d1: Energy blockSize=480 stepSize=160 > Derivate DOrder=1')
         spec.addFeature('mfcc_d2: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=2')
         spec.addFeature('e_d2: Energy blockSize=480 stepSize=160 > Derivate DOrder=2')
-        
+
         parent_analyzer = get_processor('yaafe')(spec)
         self.parents.append(parent_analyzer)
 
@@ -230,7 +229,7 @@ class LabriPMB(Analyzer):
             self.input_stepsize = stepsize
         else:
             self.input_stepsize = blocksize / 2
-            
+
         self.input_samplerate=16000
 
     @staticmethod
@@ -279,7 +278,7 @@ class LabriPMB(Analyzer):
 #        sing = bob.machine.GMMMachine(bob.io.HDF5File(singfname))
 #        nosing = bob.machine.GMMMachine(bob.io.HDF5File(nosingfname))
         gmms[0]=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '1___merged___jingle+speech.256.pkl')))
-        
+
         gmm10=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '10___merged___applause+other.256.pkl')))
         gmm10.id='applause+other'
         gmm11=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '11___merged___applause+music+other.256.pkl')))
@@ -356,9 +355,9 @@ class LabriPMB(Analyzer):
         [score, back]=viterbijl.viterbijl(features,gmms, None,  None, None, 50)
 
 
-        
-        debut = []  
-        fin = []    
+
+        debut = []
+        fin = []
         speech = []
         music = []
         for (deb, dur, lab) in back:
@@ -372,7 +371,7 @@ class LabriPMB(Analyzer):
                     music.append("music")
                 else:
                     music.append("#")
-                    
+
         # post processing :
         # delete segments < 0.5 s
         for a in range(len(debut)-2,0,-1):
@@ -437,20 +436,20 @@ class LabriPMB(Analyzer):
                 finm=numpy.delete(finm,a)
                 music=numpy.delete(music,a)
 
-        
+
         # display results
         print "********* SPEECH ************"
 
         for a in range(0,len(debut)):
             time=float(fin[a]-debut[a])/100
-    #    print("%d %f %f %s") % (a, float(debut[a])/100, float(fin[a])/100,speech[a]) 
-            print("%f %f %s") % (float(debut[a])/100, float(fin[a])/100,speech[a]) 
+    #    print("%d %f %f %s") % (a, float(debut[a])/100, float(fin[a])/100,speech[a])
+            print("%f %f %s") % (float(debut[a])/100, float(fin[a])/100,speech[a])
 
         print "********* MUSIC ************"
 
         for a in range(0,len(debutm)):
             time=float(finm[a]-debutm[a])/100
-            print("%f %f %s") % (float(debutm[a])/100, float(finm[a])/100,music[a]) 
+            print("%f %f %s") % (float(debutm[a])/100, float(finm[a])/100,music[a])
 
 
         # JLR : L'idée serait d'enregistrer les segments sous la forme [debut fin label]
