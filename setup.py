@@ -60,7 +60,7 @@ setup(
         'tables',
         'pyyaml',
         'simplejson',
-        'scipy',
+        'scipy>=0.10.0',
         'matplotlib',
         'django==1.6.8',
         'django-extensions',
