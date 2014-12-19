@@ -34,7 +34,7 @@ REL_PATH='labri';
 PLUGIN_PATH=os.path.join(timeside.__path__[0], REL_PATH);
 sys.path.append(PLUGIN_PATH);
 sys.path.append(REL_PATH);		## can be commented
-import fmultipitch
+from timeside.analyzer.labri import fmultipitch
 import numpy, scipy
 from timeside.analyzer.preprocessors import frames_adapter
 
@@ -45,14 +45,14 @@ class LABRIMultipitch(Analyzer):
 	models based on spectral reassignment and adapted harmonic source
 	model.
 	Details are in:
-	[D. Fourer. (in french) PhD thesis. Informed approach applied 
+	[D. Fourer. (in french) PhD thesis. Informed approach applied
 	sound and music analysis (in french), Dec 2013]
-	[D. Fourer and S. Marchand. Informed Multiple-F0 Estimation 
+	[D. Fourer and S. Marchand. Informed Multiple-F0 Estimation
 	Applied to Monaural Audio Source Separation. Proc. EUSIPCO'12,
 	 Bucharest, Romania, August 2012]
 	"""
 	implements(IAnalyzer)
-	
+
 	@interfacedoc
 	def setup(self, channels=None, samplerate=None, blocksize=None, totalframes=None):
 		super(LABRIMultipitch, self).setup(channels, samplerate, blocksize, totalframes)
@@ -75,23 +75,23 @@ class LABRIMultipitch(Analyzer):
 	def unit():
 		# return the unit of the data dB, St, ...
 		return "F0 vector in Hz"
-        
+
 	def __str__(self):
 		return "Labeled Instrument segments"
-	
+
 	def process(self, frames, eod=False):
-		
+
 		s,N = prepare_signal(frames);
 		self.t_index = self.t_index + float(N) / float(self.Fs);     ##time index
 		f0_candidates, t = fmultipitch.analysis(s, N, self.Fs);
 		self.values.append([numpy.unique(numpy.array(numpy.squeeze(f0_candidates))), self.t_index ]);   ## (F0_vector, time_t)
-		
+
 		return frames, eod;
 
 	def post_process(self):
 		result 					= self.new_result(data_mode='value', time_mode='framewise')
 		result.data_object.value= np.vstack(self.values)
-		
+
 		#self.add_result(result);    ## doesn't work !
 		self.result.add(result);
 
@@ -105,11 +105,11 @@ def prepare_signal(s):
 		if sz[0] < sz[1]:
 			s = s.T;
 		s = numpy.sum(s, axis=0);
-	
+
 	sz = numpy.shape(s);
 	## normalize
-	N = len(s);	
+	N = len(s);
 	#signal = s/max(abs(s)) * 1.;
 	return s, N;
-	
-	
+
+
