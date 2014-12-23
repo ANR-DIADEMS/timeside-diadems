@@ -6,16 +6,23 @@ from setuptools import setup
 import sys
 from setuptools.command.test import test as TestCommand
 
+try:
+    import multiprocessing  # Workaround for http://bugs.python.org/issue15881
+except ImportError:
+    pass
+
 
 # Pytest
 class PyTest(TestCommand):
+
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = ['tests', '--ignore', 'tests/sandbox', '--verbose']
         self.test_suite = True
 
     def run_tests(self):
-        #import here, cause outside the eggs aren't loaded
+        # import here, cause outside the eggs aren't loaded
+
         import pytest
         errno = pytest.main(self.test_args)
         sys.exit(errno)
@@ -34,7 +41,7 @@ CLASSIFIERS = [
     'Topic :: Multimedia :: Sound/Audio :: Conversion',
     'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+]
 
 KEYWORDS = 'audio analysis features extraction MIR transcoding graph visualize plot HTML5 interactive metadata player'
 
@@ -54,7 +61,7 @@ setup(
         'tables',
         'pyyaml',
         'simplejson',
-        'scipy',
+        'scipy>=0.10.0',
         'matplotlib',
         'django==1.6.8',
         'django-extensions',
@@ -62,6 +69,11 @@ setup(
         'south',
         'traits',
         'networkx',
+        # diadems
+        'py_sonicvisualiser',
+        'pyannote.core',
+        'pyannote.features',
+
         ],
     platforms=['OS Independent'],
     license='Gnu Public License V2',
@@ -73,4 +85,5 @@ setup(
     scripts=['scripts/timeside-waveforms', 'scripts/timeside-launch'],
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
-    )
+)
+

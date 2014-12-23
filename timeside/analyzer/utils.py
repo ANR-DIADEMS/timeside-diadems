@@ -48,7 +48,7 @@ def computeModulation(serie, wLen, withLog=True):
         Args :
             - serie       : list or numpy array containing the serie.
             - wLen        : Length of the analyzis window in samples.
-            - withLog     : Whether compute the var() or log(var()) .
+            - withLog     : Whether compute the var() or var(log()) .
 
         Returns :
             - modul       : Modulation of the serie.
@@ -222,6 +222,14 @@ def entropy(serie, nbins=10, base=np.exp(1), approach='unbiased'):
         nbias = nbias / np.log(base)
         sigma = sigma / np.log(base)
         return estimate
+
+
+def smoothing(data, number_of_points=3, smoothing_function=np.mean):
+    """
+    """
+
+    w = number_of_points/2
+    return [0.0]*w + [smoothing_function(data[i-w:i+w]) for i in range(w, len(data)-w)] + [0.0]*w
 
 
 def nextpow2(value):
