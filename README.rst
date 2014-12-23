@@ -54,15 +54,15 @@ Partners
 
 * Development  
 
-    * `Parisson <http://parisson.com>`_
+  * `Parisson <http://parisson.com>`_
 
 
 
 Related projects
 =================
 
-    * `Telemeta <http://telemeta.org>`__ : open web audio platform
-    * `Sound archives <http://archives.crem-cnrs.fr/>`_ of the CNRS, CREM and the "Musée de l'Homme" in Paris, France.
+* `Telemeta <http://telemeta.org>`__ : open web audio platform
+* `Sound archives <http://archives.crem-cnrs.fr/>`_ of the CNRS, CREM and the "Musée de l'Homme" in Paris, France.
  
 
 Copyrights
