@@ -2,8 +2,7 @@
 TimeSide : open web audio processing framework
 ==============================================
 
-#|version| |downloads| 
-|travis_master| #|coveralls_master|
+|travis_master|
 
 .. |travis_master| image:: https://secure.travis-ci.org/ANR-DIADEMS/timeside-diadems.png?branch=master
     :target: https://travis-ci.org/ANR-DIADEMS/timeside-diadems/
@@ -48,10 +47,13 @@ Partners
   * `LABRI <http://www.labri.fr/>`_  
   * `CNRS-LIMSI <http://www.limsi.fr/>`_
 * Musicology and Ethnomusicology Research
+
   * `LESC-CNRS <http://www.mae.u-paris10.fr/lesc/>`_
   * `CREM <http://www.crem-cnrs.fr/>`_
   * `MNHN <http://www.ecoanthropologie.cnrs.fr/>`_
-* Development    * ``_ 
+
+* Development  
+
     * `Parisson <http://parisson.com>`_
 
 
