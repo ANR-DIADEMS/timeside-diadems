@@ -39,38 +39,27 @@ CLASSIFIERS = [
 KEYWORDS = 'audio analysis features extraction MIR transcoding graph visualize plot HTML5 interactive metadata player'
 
 setup(
-    name='TimeSide',
-    url='https://github.com/yomguy/TimeSide/',
-    description="open web audio processing framework",
-    long_description=open('README.rst').read(),
-    author="Guillaume Pellerin, Paul Brossier, Thomas Fillon, Riccardo Zaccarelli, Olivier Guilyardi",
-    author_email="yomguy@parisson.com, piem@piem.org, thomas@parisson.com, riccardo.zaccarelli@gmail.com, olivier@samalyse.com",
-    version='0.6.1',
+    # Package
+    namespace_packages = ['timeside']
+    packages=['timeside'],
     install_requires=[
-        'numpy',
-        'mutagen',
-        'pillow',
-        'h5py',
-        'tables',
-        'pyyaml',
-        'simplejson',
-        'scipy',
-        'matplotlib',
-        'django==1.6.8',
-        'django-extensions',
-        'djangorestframework',
-        'south',
-        'traits',
-        'networkx',
+        'timeside',
         ],
+    # PyPI
+    name='TimeSide-Diadems',
+    url='https://github.com/ANR-DIADEMS/timeside-diadems',
+    description="TimeSide extensions developped during the Diadems project",
+    long_description=open('README.rst').read(),
+    author="Guillaume Pellerin, Thomas Fillon",
+    author_email="yomguy@parisson.com, thomas@parisson.com",
+    version='0.1',
     platforms=['OS Independent'],
     license='Gnu Public License V2',
     classifiers=CLASSIFIERS,
     keywords=KEYWORDS,
-    packages=['timeside'],
     include_package_data=True,
     zip_safe=False,
-    scripts=['scripts/timeside-waveforms', 'scripts/timeside-launch'],
+   # Tests
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
     )
