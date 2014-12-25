@@ -47,7 +47,7 @@ KEYWORDS = 'audio analysis features extraction MIR transcoding graph visualize p
 
 setup(
     # Package
-    namespace_packages = ['timeside']
+    namespace_packages = ['timeside'],
     packages=['timeside'],
     install_requires=[
         'timeside',
