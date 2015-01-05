@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import sys
 from setuptools.command.test import test as TestCommand
 
@@ -47,8 +47,8 @@ KEYWORDS = 'audio analysis features extraction MIR transcoding graph visualize p
 
 setup(
     # Package
-    namespace_packages = ['timeside'],
-    packages=['timeside.extensions'],
+    namespace_packages = ['timeside', 'timeside.plugins'],
+    packages=find_packages(),
     install_requires=[
         'timeside',
         # Dependencies from diadems processors

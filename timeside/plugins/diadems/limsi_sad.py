@@ -19,10 +19,8 @@
 
 # Author: David Doukhan <doukhan@limsi.fr>
 
-from timeside.core import implements, interfacedoc, get_processor
-from timeside.analyzer.core import Analyzer
-from timeside.api import IAnalyzer
-import timeside
+from timeside.core import implements, interfacedoc, get_processor, _WITH_YAAFE
+from timeside.core.analyzer import Analyzer, IAnalyzer
 
 from timeside.tools.parameters import Enum, HasTraits, Float, Tuple
 
@@ -31,7 +29,7 @@ import pickle
 import os.path
 
 # Require Yaafe
-if not timeside._WITH_YAAFE:
+if not _WITH_YAAFE:
     raise ImportError('yaafelib must be missing')
 
 

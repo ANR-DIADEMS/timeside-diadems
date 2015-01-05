@@ -1,2 +1,3 @@
 setuptools
+git+git://github.com/Parisson/TimeSide.git@ts_extensions#egg=TimeSide
 -e .
