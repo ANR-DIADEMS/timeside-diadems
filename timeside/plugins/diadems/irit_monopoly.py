@@ -19,13 +19,12 @@
 
 # Author: Maxime Le Coz <lecoz@irit.fr>
 from __future__ import absolute_import
-from timeside.analyzer.utils import segmentFromValues
+from timeside.plugins.analyzer.utils import segmentFromValues
 from timeside.core import implements, interfacedoc
-from timeside.analyzer.core import Analyzer
-from timeside.api import IAnalyzer
+from timeside.core.analyzer import Analyzer, IAnalyzer
 import numpy
-from timeside.analyzer.preprocessors import frames_adapter
-from timeside.analyzer.externals.aubio_pitch import AubioPitch
+from timeside.core.preprocessors import frames_adapter
+from timeside.plugins.analyzer.externals.aubio_pitch import AubioPitch
 
 
 class IRITMonopoly(Analyzer):

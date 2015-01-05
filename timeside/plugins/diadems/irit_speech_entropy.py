@@ -20,10 +20,10 @@
 # Author: Maxime Le Coz <lecoz@irit.fr>
 
 from timeside.core import implements, interfacedoc
-from timeside.analyzer.core import Analyzer
-from timeside.analyzer.utils import entropy, computeModulation
-from timeside.analyzer.utils import segmentFromValues
-from timeside.api import IAnalyzer
+from timeside.core.analyzer import Analyzer
+from timeside.plugins.analyzer.utils import entropy, computeModulation
+from timeside.plugins.analyzer.utils import segmentFromValues
+from timeside.core.api import IAnalyzer
 from numpy import array
 from scipy.ndimage.morphology import binary_opening
 
