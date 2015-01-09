@@ -20,9 +20,8 @@
 # Author: Maxime Le Coz <lecoz@irit.fr>
 
 from timeside.core import implements, interfacedoc
-from timeside.analyzer.core import Analyzer
-from timeside.analyzer.waveform import Waveform
-from timeside.api import IAnalyzer
+from timeside.core.analyzer import Analyzer, IAnalyzer
+from timeside.plugins.analyzer.waveform import Waveform
 import numpy as np
 from collections import deque
 

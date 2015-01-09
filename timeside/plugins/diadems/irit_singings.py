@@ -19,16 +19,15 @@
 
 # Author: Maxime Le Coz <lecoz@irit.fr>
 from __future__ import absolute_import
-from timeside.analyzer.utils import smoothing
+from timeside.plugins.diadems.utils import smoothing
 from timeside.core import implements, interfacedoc
-from timeside.analyzer.core import Analyzer
-from timeside.analyzer.irit_monopoly import IRITMonopoly
-from timeside.api import IAnalyzer
+from timeside.core.analyzer import Analyzer, IAnalyzer
+from timeside.plugins.diadems.irit_monopoly import IRITMonopoly
 from aubio import pitch
 from numpy.fft import rfft
 from numpy import argmin, argmax, sqrt, log2, linspace, abs, median
 from collections import Counter
-from timeside.analyzer.preprocessors import frames_adapter
+from timeside.core.preprocessors import frames_adapter
 
 
 class IRITSingings(Analyzer):

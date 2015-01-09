@@ -21,10 +21,9 @@
 
 # Author: D Fourer <dominique@fourer.fr> http://www.fourer.fr
 from __future__ import absolute_import
-from timeside.analyzer.utils import segmentFromValues
-from timeside.core import Processor, implements, interfacedoc, FixedSizeInputAdapter
-from timeside.analyzer.core import *
-from timeside.api import IAnalyzer
+from timeside.plugins.analyzer.utils import segmentFromValues
+from timeside.core import Processor, implements, interfacedoc
+from timeside.core.analyzer import Analyzer, IAnalyzer
 import timeside
 
 
@@ -34,9 +33,9 @@ REL_PATH='labri';
 PLUGIN_PATH=os.path.join(timeside.__path__[0], REL_PATH);
 sys.path.append(PLUGIN_PATH);
 sys.path.append(REL_PATH);		## can be commented
-from timeside.analyzer.labri import fmultipitch
+from timeside.plugins.diadems.labri import fmultipitch
 import numpy, scipy
-from timeside.analyzer.preprocessors import frames_adapter
+from timeside.core.preprocessors import frames_adapter
 
 class LABRIMultipitch(Analyzer):
 	"""

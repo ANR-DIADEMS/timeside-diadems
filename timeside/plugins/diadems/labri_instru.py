@@ -21,22 +21,20 @@
 
 # Author: D Fourer <dominique@fourer.fr> http://www.fourer.fr
 
-from timeside.core import Processor, implements, interfacedoc, FixedSizeInputAdapter
-from timeside.analyzer.core import *
-from timeside.api import IValueAnalyzer
-from timeside.api import IAnalyzer
+from timeside.core import Processor, implements, interfacedoc
+from timeside.core.analyzer import Analyzer, IAnalyzer
 import numpy, scipy
-from timeside.analyzer.preprocessors import frames_adapter
-
+from timeside.core.preprocessors import frames_adapter
+import timeside
 ## plugin specific
 import sys, os
 REL_PATH='labri';
 PLUGIN_PATH=os.path.join(timeside.__path__[0], REL_PATH);
 sys.path.append(PLUGIN_PATH);
 sys.path.append(REL_PATH);		## can be commented
-from timeside.analyzer.labri import timbre_descriptor
-from timeside.analyzer.labri import my_tools as mt
-from timeside.analyzer.labri import my_lda
+from timeside.plugins.diadems.labri import timbre_descriptor
+from timeside.plugins.diadems.labri import my_tools as mt
+from timeside.plugins.diadems.labri import my_lda
 
 class LABRIInstru(Analyzer):
     implements(IAnalyzer)

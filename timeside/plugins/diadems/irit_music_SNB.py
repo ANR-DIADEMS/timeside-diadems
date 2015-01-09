@@ -20,11 +20,10 @@
 # Author: Maxime Le Coz <lecoz@irit.fr>
 
 from timeside.core import implements, interfacedoc
-from timeside.analyzer.core import Analyzer
-from timeside.analyzer.utils import melFilterBank, computeModulation
-from timeside.analyzer.utils import segmentFromValues
-from timeside.analyzer.irit_diverg import IRITDiverg
-from timeside.api import IAnalyzer
+from timeside.core.analyzer import Analyzer, IAnalyzer
+from timeside.plugins.analyzer.utils import melFilterBank, computeModulation
+from timeside.plugins.analyzer.utils import segmentFromValues
+from timeside.plugins.diadems.irit_diverg import IRITDiverg
 from numpy import array, mean, arange, nonzero
 
 

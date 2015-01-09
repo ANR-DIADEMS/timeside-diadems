@@ -23,8 +23,7 @@
 from __future__ import absolute_import
 
 from timeside.core import implements, interfacedoc, get_processor
-from timeside.analyzer.core import Analyzer
-from timeside.api import IAnalyzer
+from timeside.core.analyzer import Analyzer, IAnalyzer
 import timeside
 
 import yaafelib

@@ -122,8 +122,8 @@ class IRITStartSeg(Analyzer):
         silences = [1 if e < self.max_energy else 0 for e in self.energy]
         step = float(self.input_stepsize) / float(self.samplerate())
 
-        models_dir = os.path.join(timeside.__path__[0],
-                                  'analyzer', 'trained_models')
+        path = os.path.split(__file__)[0]
+        models_dir = os.path.join(path, 'trained_models')
         prototype1_file = os.path.join(models_dir,
                                        'irit_noise_startSilences_proto1.dat')
         prototype2_file = os.path.join(models_dir,

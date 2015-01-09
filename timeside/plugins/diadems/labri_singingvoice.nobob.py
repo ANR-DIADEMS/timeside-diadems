@@ -21,12 +21,11 @@
 from __future__ import absolute_import
 
 from timeside.core import implements, interfacedoc, get_processor
-from timeside.analyzer.core import Analyzer
-from timeside.api import IAnalyzer
+from timeside.core.analyzer import Analyzer, IAnalyzer
 import timeside
 
 import yaafelib
-import numpy 
+import numpy
 import pickle
 import os.path
 
@@ -57,11 +56,11 @@ class LabriSing(Analyzer):
         spec.addFeature('e_d1: Energy blockSize=480 stepSize=160 > Derivate DOrder=1')
         spec.addFeature('mfcc_d2: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=2')
         spec.addFeature('e_d2: Energy blockSize=480 stepSize=160 > Derivate DOrder=2')
-        
+
         parent_analyzer = get_processor('yaafe')(spec)
         self.parents.append(parent_analyzer)
         self.parents.append(AubioTemporal())  # TF: ici on rajoute AubioTemporal() comme parent
-        
+
 
         # these are not really taken into account by the system
         # these are bypassed by yaafe feature plan
@@ -71,11 +70,11 @@ class LabriSing(Analyzer):
             self.input_stepsize = stepsize
         else:
             self.input_stepsize = blocksize / 2
-            
+
         self.input_samplerate=16000
 
 
-    
+
 
     def llh(gmm, x):
         n_samples, n_dim = x.shape
@@ -87,9 +86,9 @@ class LabriSing(Analyzer):
         m = numpy.amax(llh,1)
         dif = llh - numpy.atleast_2d(m).T
         return m + numpy.log(numpy.sum(numpy.exp(dif),1))
-        
 
-    
+
+
 
     @staticmethod
     @interfacedoc
@@ -136,18 +135,18 @@ class LabriSing(Analyzer):
         # llh
         singmm=pickle.load(open('sing.512.gmm.sklearn.pickle', 'rb'))
         nosingmm=pickle.load(open('nosing.512.gmm.sklearn.pickle', 'rb'))
-        
+
         # llh diff
         result = 0.5 + 0.5 * (llh(singmm,features) - llh(nosingmm,features))
 
         # onsets
         onsets = self.process_pipe.results.get_result_by_id('aubio_temporal.onset').time
 
-        debut = []  # TF: as-tu vraiment besoin d'une liste ou simplement de garder une référence au précédent onset ? 
-        fin = []    # TF: as-tu vraiment besoin d'une liste ou simplement de garder une référence à l'onset courant ?
+        debut = []  # TF: as-tu vraiment besoin d'une liste ou simplement de garder une référence au précédent onset ?
+        fin = []    # TF: as-tu vraiment besoin d'une liste ou simplement de garder une référence à l'onset courant ?
         label = []
         debut.append(0)
-        previous_onset = 0  
+        previous_onset = 0
         # for a in range(0, len(onsets)):
         for onset in onsets:  # TF --> manière plus pythonique de faire la boucle
             #    print "%f" % onsets[a]
@@ -156,7 +155,7 @@ class LabriSing(Analyzer):
 
             sum = 0
             for b in range(previous_onset, current_onset):
-                sum += result[b] 
+                sum += result[b]
             if sum > 0:
                 current_label = 'sing'
             else:
@@ -172,7 +171,7 @@ class LabriSing(Analyzer):
         current_onset =  len(features)
         sum=0
         for b in range(previous_onset, current_onset):
-            sum += result[b] 
+            sum += result[b]
         if sum > 0:
             current_label = 'sing'
         else:
@@ -202,10 +201,10 @@ class LabriSing(Analyzer):
                 fin[a]=fin[a+1]
                 fin=numpy.delete(fin,a)
                 label=numpy.delete(label,a)
-           
+
         for a in range(1,len(debut)):
             time=float(fin[a]-debut[a])/100
-            print("%d %f %f %s") % (a, debut[a]/100, fin[a]/100,label[a]) 
+            print("%d %f %f %s") % (a, debut[a]/100, fin[a]/100,label[a])
 
 
         # TF: pour la suite, il faut voir ce que tu veux faire comme resultat : une segmentation 'sing'/'no sing' c'est ça ?
