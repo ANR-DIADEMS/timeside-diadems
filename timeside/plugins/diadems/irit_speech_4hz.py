@@ -28,7 +28,7 @@ from numpy.fft import rfft
 from scipy.signal import firwin, lfilter
 from timeside.core.preprocessors import frames_adapter
 
-from timeside.tools.parameters import Float, HasTraits
+from timeside.core.tools.parameters import Float, HasTraits
 
 
 class IRITSpeech4Hz(Analyzer):

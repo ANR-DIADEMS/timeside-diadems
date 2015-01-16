@@ -22,7 +22,7 @@
 from timeside.core import implements, interfacedoc, get_processor, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 
-from timeside.tools.parameters import Enum, HasTraits, Float, Tuple
+from timeside.core.tools.parameters import Enum, HasTraits, Float, Tuple
 
 import numpy as np
 import pickle

@@ -25,7 +25,7 @@ from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
 from timeside.core.preprocessors import frames_adapter
 from timeside.plugins.analyzer.utils import MACHINE_EPSILON
-from timeside.tools.buffering import BufferTable
+from timeside.core.tools.buffering import BufferTable
 
 import numpy
 from scipy.signal import firwin, lfilter, lfiltic
