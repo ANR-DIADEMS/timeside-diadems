@@ -1,4 +1,3 @@
 setuptools
-git+git://github.com/Parisson/TimeSide.git@ts_extensions#egg=TimeSide
-py-sonicvisualiser==0.2-9-gebe83bd
+git+git://github.com/Parisson/TimeSide.git@dev#egg=TimeSide
 -e .
