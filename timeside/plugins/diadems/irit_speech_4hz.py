@@ -18,6 +18,7 @@
 # along with TimeSide.  If not, see <http://www.gnu.org/licenses/>.
 
 # Author: Maxime Le Coz <lecoz@irit.fr>
+from __future__ import division
 
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
@@ -80,12 +81,12 @@ class IRITSpeech4Hz(Analyzer):
             channels, samplerate, blocksize, totalframes)
         self.nFFT = 2048
         self.nbFilters = 30
-        self.melFilter = melFilterBank(self.nbFilters, self.nFFT, samplerate)
+        self.melFilter = melFilterBank(self.nbFilters, self.nFFT, self.input_samplerate)
 
-        self.wLen = 0.016
-        self.wStep = 0.008
-        self.input_blocksize = int(self.wLen * samplerate)
-        self.input_stepsize = int(self.wStep * samplerate)
+        self.wLen = 0.016   # Blocksize lenth in seconds
+        self.wStep = 0.008  # Stepsize in seconds
+        self.input_blocksize = int(self.wLen * self.input_samplerate)
+        self.input_stepsize = int(self.wStep * self.input_samplerate)
 
     @staticmethod
     @interfacedoc
@@ -112,6 +113,7 @@ class IRITSpeech4Hz(Analyzer):
         '''
 
         frames = frames.T[0]
+
         # windowing of the frame (could be a changeable property)
         w = frames * np.hamming(len(frames))
 
@@ -144,7 +146,7 @@ class IRITSpeech4Hz(Analyzer):
 
         # Energy Modulation
         frameLenModulation = int(
-            self.modulLen * self.samplerate() / self.blocksize())
+            self.modulLen * self.samplerate() / self.input_stepsize)
         modEnergyValue = computeModulation(energy, frameLenModulation, True)
 
         # Confidence Index
@@ -180,11 +182,11 @@ class IRITSpeech4Hz(Analyzer):
         segs.data_object.label_metadata.label = label
 
         segs.data_object.label = [convert[s[2]] for s in segList]
-        segs.data_object.time = [(np.float(s[0]) * self.blocksize() /
-                                 self.samplerate())
+        segs.data_object.time = [(np.float(s[0]) * self.input_stepsize /
+                                  self.input_samplerate)
                                  for s in segList]
-        segs.data_object.duration = [(np.float(s[1] - s[0] + 1) * self.blocksize() /
-                                     self.samplerate())
+        segs.data_object.duration = [(np.float(s[1] - s[0] + 1) * self.input_stepsize /
+                                      self.input_samplerate)
                                      for s in segList]
 
         self.add_result(segs)
@@ -197,16 +199,14 @@ class IRITSpeech4Hz(Analyzer):
         segs.data_object.label_metadata.label = label
 
         segs.data_object.label = [convert[s[2]] for s in segList_filt]
-        segs.data_object.time = [(np.float(s[0]) * self.blocksize() /
-                                 self.samplerate())
+        segs.data_object.time = [(np.float(s[0]) * self.input_stepsize /
+                                  self.input_samplerate)
                                  for s in segList_filt]
-        segs.data_object.duration = [(np.float(s[1] - s[0] + 1) * self.blocksize() /
-                                     self.samplerate())
+        segs.data_object.duration = [(np.float(s[1] - s[0] + 1) * self.input_stepsize /
+                                      self.input_samplerate)
                                      for s in segList_filt]
 
         self.add_result(segs)
-
-
 
         return
 
