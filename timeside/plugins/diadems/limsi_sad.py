@@ -275,7 +275,7 @@ DisplayLIMSI_SAD_etape = DisplayAnalyzer.create(
     grapher_id='grapher_limsi_sad_etape',
     grapher_name='Speech activity (ETAPE)',
     background='waveform',
-    staging=True)
+    staging=False)
 
 # Mayan Model
 DisplayLIMSI_SAD_maya = DisplayAnalyzer.create(
@@ -285,4 +285,4 @@ DisplayLIMSI_SAD_maya = DisplayAnalyzer.create(
     grapher_id='grapher_limsi_sad_maya',
     grapher_name='Speech activity (Mayan)',
     background='waveform',
-    staging=True)
+    staging=False)

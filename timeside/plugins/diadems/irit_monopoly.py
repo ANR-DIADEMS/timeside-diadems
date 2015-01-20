@@ -168,7 +168,7 @@ class IRITMonopoly(Analyzer):
 
         return numpy.mean(Pxy)
 
-    
+
 # Generate Grapher for IRITMonopoly analyzer
 from timeside.core.grapher import DisplayAnalyzer
 
@@ -178,4 +178,4 @@ DisplayMonopoly = DisplayAnalyzer.create(
     grapher_id='grapher_monopoly_segments',
     grapher_name='Mono/Poly segmentation',
     background='waveform',
-    staging=True)
+    staging=False)

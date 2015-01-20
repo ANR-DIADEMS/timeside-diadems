@@ -227,4 +227,4 @@ DisplayIRIT_Start = DisplayAnalyzer.create(
     grapher_id='grapher_irit_startseg',
     grapher_name='Analogous start point',
     background='waveform',
-    staging=True)
+    staging=False)
