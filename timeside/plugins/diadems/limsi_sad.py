@@ -166,8 +166,9 @@ class LimsiSad(Analyzer):
             raise ValueError(
                 "argument sad_model %s not supported. Supported values are 'etape' or 'maya'" % sad_model)
         self.sad_model = sad_model
-        picfname = os.path.join(
-            timeside.__path__[0], 'analyzer', 'trained_models', 'limsi_sad_%s.pkl' % sad_model)
+        path = os.path.split(__file__)[0]
+        models_dir = os.path.join(path, 'trained_models')
+        picfname = os.path.join(models_dir, 'limsi_sad_%s.pkl' % sad_model)
         self.gmms = pickle.load(open(picfname, 'rb'))
 
         self.dews = dews
@@ -261,3 +262,27 @@ class LimsiSad(Analyzer):
         sad_seg_result.data_object.label_metadata.label = {0: 'Not Speech', 1: 'Speech'}
 
         self.add_result(sad_seg_result)
+
+
+# Generate Grapher for Limsi SAD analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+# Etape Model
+DisplayLIMSI_SAD_etape = DisplayAnalyzer.create(
+    analyzer=LimsiSad,
+    analyzer_parameters={'sad_model': 'etape'},
+    result_id='limsi_sad.sad_segments',
+    grapher_id='grapher_limsi_sad_etape',
+    grapher_name='Speech activity (ETAPE)',
+    background='waveform',
+    staging=True)
+
+# Mayan Model
+DisplayLIMSI_SAD_maya = DisplayAnalyzer.create(
+    analyzer=LimsiSad,
+    analyzer_parameters={'sad_model': 'maya'},
+    result_id='limsi_sad.sad_segments',
+    grapher_id='grapher_limsi_sad_maya',
+    grapher_name='Speech activity (Mayan)',
+    background='waveform',
+    staging=True)
