@@ -167,3 +167,15 @@ class IRITMonopoly(Analyzer):
             numpy.log(somme1 + 1 / delta - 1) - somme1
 
         return numpy.mean(Pxy)
+
+    
+# Generate Grapher for IRITMonopoly analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+DisplayMonopoly = DisplayAnalyzer.create(
+    analyzer=IRITMonopoly,
+    result_id='irit_monopoly.segments',
+    grapher_id='grapher_monopoly_segments',
+    grapher_name='Mono/Poly segmentation',
+    background='waveform',
+    staging=True)

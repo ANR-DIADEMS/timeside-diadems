@@ -209,3 +209,24 @@ class IRITSpeech4Hz(Analyzer):
 
 
         return
+
+
+# Generate Grapher for IRITSpeech4Hz analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+Display4hzSpeechSegmentation = DisplayAnalyzer.create(
+    analyzer=IRITSpeech4Hz,
+    result_id='irit_speech_4hz.segments',
+    grapher_id='grapher_irit_speech_4hz_segments',
+    grapher_name='Speech segmentation',
+    background='waveform',
+    staging=True)
+
+# IRIT 4Hz with median filter
+Display4hzSpeechSegmentation = DisplayAnalyzer.create(
+    analyzer=IRITSpeech4Hz,
+    result_id='irit_speech_4hz.segments_median',
+    grapher_id='grapher_irit_speech_4hz_segments_median',
+    grapher_name='Speech segmentation (median)',
+    background='waveform',
+    staging=True)

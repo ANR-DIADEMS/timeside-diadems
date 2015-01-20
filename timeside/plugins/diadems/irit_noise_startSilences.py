@@ -27,6 +27,7 @@ from timeside.core.preprocessors import frames_adapter
 from timeside.plugins.analyzer.utils import MACHINE_EPSILON
 from timeside.core.tools.buffering import BufferTable
 
+
 import numpy
 from scipy.signal import firwin, lfilter, lfiltic
 from scipy.ndimage.morphology import binary_opening, binary_closing
@@ -122,8 +123,9 @@ class IRITStartSeg(Analyzer):
         silences = [1 if e < self.max_energy else 0 for e in self.energy]
         step = float(self.input_stepsize) / float(self.samplerate())
 
-        models_dir = os.path.join(timeside.__path__[0],
-                                  'analyzer', 'trained_models')
+        path = os.path.split(__file__)[0]
+        models_dir = os.path.join(path, 'trained_models')
+
         prototype1_file = os.path.join(models_dir,
                                        'irit_noise_startSilences_proto1.dat')
         prototype2_file = os.path.join(models_dir,
@@ -215,3 +217,14 @@ def computeDist(v1, v2, min_overlap):
         return computeDist(v2, v1, min_overlap)
 
     return d, v1_out, v2_out
+
+
+# Generate Grapher for IRITStartSeg analyzer
+from timeside.core.grapher import DisplayAnalyzer
+DisplayIRIT_Start = DisplayAnalyzer.create(
+    analyzer=IRITStartSeg,
+    result_id='irit_startseg.segments',
+    grapher_id='grapher_irit_startseg',
+    grapher_name='Analogous start point',
+    background='waveform',
+    staging=True)
