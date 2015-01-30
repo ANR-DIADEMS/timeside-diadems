@@ -22,11 +22,11 @@ from __future__ import absolute_import
 
 import timeside
 from timeside.core import implements, interfacedoc
-from timeside.analyzer.core import Analyzer
-from timeside.analyzer.preprocessors import frames_adapter
-from timeside.api import IAnalyzer
-from timeside.analyzer.utils import MACHINE_EPSILON
-from timeside.tools.buffering import BufferTable
+from timeside.core.analyzer import Analyzer, IAnalyzer
+from timeside.core.preprocessors import frames_adapter
+from timeside.plugins.analyzer.utils import MACHINE_EPSILON
+from timeside.core.tools.buffering import BufferTable
+
 
 import numpy
 from scipy.signal import firwin, lfilter, lfiltic
@@ -127,8 +127,9 @@ class IRITStartSeg(Analyzer):
         silences = [1 if e < self.max_energy else 0 for e in self.energy]
         step = float(self.input_stepsize) / float(self.samplerate())
 
-        models_dir = os.path.join(timeside.__path__[0],
-                                  'analyzer', 'trained_models')
+        path = os.path.split(__file__)[0]
+        models_dir = os.path.join(path, 'trained_models')
+
         prototype1_file = os.path.join(models_dir,
                                        'irit_noise_startSilences_proto1.dat')
         prototype2_file = os.path.join(models_dir,
@@ -138,7 +139,7 @@ class IRITStartSeg(Analyzer):
         prototype2 = numpy.load(prototype2_file)
 
         # Lissage pour éliminer les petits segments dans un sens ou l'autre
-        struct = [1] * len(prototype)	
+        struct = [1] * len(prototype)
         silences = binary_closing(silences, struct)
         silences = binary_opening(silences, struct)
 
@@ -220,3 +221,14 @@ def computeDist(v1, v2, min_overlap):
         return computeDist(v2, v1, min_overlap)
 
     return d, v1_out, v2_out
+
+
+# Generate Grapher for IRITStartSeg analyzer
+from timeside.core.grapher import DisplayAnalyzer
+DisplayIRIT_Start = DisplayAnalyzer.create(
+    analyzer=IRITStartSeg,
+    result_id='irit_startseg.segments',
+    grapher_id='grapher_irit_startseg',
+    grapher_name='Analogous start point',
+    background='waveform',
+    staging=False)
