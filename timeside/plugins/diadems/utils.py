@@ -234,3 +234,10 @@ def nextpow2(value):
         return 0
     else:
         raise ValueError('Value must be positive')
+
+def smoothing(data, number_of_points=3, smoothing_function=np.mean):
+    """
+    """
+
+    w = number_of_points/2
+    return [0.0]*w + [smoothing_function(data[i-w:i+w]) for i in range(w, len(data)-w)] + [0.0]*w
