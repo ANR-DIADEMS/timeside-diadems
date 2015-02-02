@@ -25,7 +25,8 @@ from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
 from timeside.core.preprocessors import frames_adapter
 from timeside.plugins.analyzer.utils import MACHINE_EPSILON
-from timeside.tools.buffering import BufferTable
+from timeside.core.tools.buffering import BufferTable
+
 
 import numpy
 from scipy.signal import firwin, lfilter, lfiltic
@@ -116,6 +117,10 @@ class IRITStartSeg(Analyzer):
         '''
         # Normalize energy
         self.energy = self._buffer['energy'][:]
+        
+        
+        # BAD PATCH !!!
+        self.energy[-1] = 0
         if self.energy.max():
             self.energy = self.energy / self.energy.max()
 
@@ -124,6 +129,7 @@ class IRITStartSeg(Analyzer):
 
         path = os.path.split(__file__)[0]
         models_dir = os.path.join(path, 'trained_models')
+
         prototype1_file = os.path.join(models_dir,
                                        'irit_noise_startSilences_proto1.dat')
         prototype2_file = os.path.join(models_dir,
@@ -146,9 +152,9 @@ class IRITStartSeg(Analyzer):
                 seg = [i, -1, v]
         seg[1] = i
         silencesList.append(tuple(seg))
-        selected_segs = []
-        candidates = []
-
+        segments = []
+        start  = 0.0
+        
         for s in silencesList:
             if s[2] == 1:
                 shape = numpy.array(self.energy[s[0]:s[1]])
@@ -157,21 +163,20 @@ class IRITStartSeg(Analyzer):
                 d2, _ = computeDist2(prototype2, shape)
                 dist = min([d1, d2])
 
-                candidates.append((s[0], s[1], dist))
                 if dist < self.threshold:
-                    selected_segs.append(s)
+                    s = map(float, s)	
+                    segments += [(start, s[0]*step-start, 1) , (s[0]*step, (s[1]-s[0])*step, 0)]
+                    start = s[1]*step
 
+        segments += [(start, len(self.energy)*step-start, 1)]
+                
         label = {0: 'Start', 1: 'Session'}
-
         segs = self.new_result(data_mode='label', time_mode='segment')
         segs.id_metadata.id += '.' + 'segments'
         segs.id_metadata.name += ' ' + 'Segments'
         segs.data_object.label_metadata.label = label
-        segs.data_object.label = [s[2] for s in selected_segs]
-        segs.data_object.time = [(float(s[0]) * step)
-                                 for s in selected_segs]
-        segs.data_object.duration = [(float(s[1] - s[0]) * step)
-                                     for s in selected_segs]
+        
+        segs.data_object.time, segs.data_object.duration,	 segs.data_object.label= zip(*segments)
 
         self.add_result(segs)
 
@@ -216,3 +221,14 @@ def computeDist(v1, v2, min_overlap):
         return computeDist(v2, v1, min_overlap)
 
     return d, v1_out, v2_out
+
+
+# Generate Grapher for IRITStartSeg analyzer
+from timeside.core.grapher import DisplayAnalyzer
+DisplayIRIT_Start = DisplayAnalyzer.create(
+    analyzer=IRITStartSeg,
+    result_id='irit_startseg.segments',
+    grapher_id='grapher_irit_startseg',
+    grapher_name='Analogous start point',
+    background='waveform',
+    staging=False)

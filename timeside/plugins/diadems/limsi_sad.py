@@ -22,7 +22,7 @@
 from timeside.core import implements, interfacedoc, get_processor, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 
-from timeside.tools.parameters import Enum, HasTraits, Float, Tuple
+from timeside.core.tools.parameters import Enum, HasTraits, Float, Tuple
 
 import numpy as np
 import pickle
@@ -34,11 +34,9 @@ if not _WITH_YAAFE:
 
 
 class GMM:
-
     """
     Gaussian Mixture Model
     """
-
     def __init__(self, weights, means, vars):
         self.weights = weights
         self.means = means
@@ -51,10 +49,9 @@ class GMM:
                       - 2 * np.dot(x, (self.means / self.vars).T)
                       + np.dot(x ** 2, (1.0 / self.vars).T))
         + np.log(self.weights)
-
-        m = np.amax(llh, 1)
+        m = np.amax(llh,1)
         dif = llh - np.atleast_2d(m).T
-        return m + np.log(np.sum(np.exp(dif), 1))
+        return m + np.log(np.sum(np.exp(dif),1))
 
 
 def slidewinmap(lin, winsize, func):
@@ -70,22 +67,18 @@ def slidewinmap(lin, winsize, func):
     winsize: size of the sliding windows in samples (int)
     func: function to be mapped on sliding windows
     """
-
-    tmpin = ([lin[0]] * (winsize / 2)) + list(lin) + \
-        ([lin[-1]] * (winsize - 1 - winsize / 2))
+    tmpin = ([lin[0]] * (winsize/2)) + list(lin) + ([lin[-1]] * (winsize -1 - winsize/2))
     lout = []
     for i in xrange(len(lin)):
-        lout.append(func(tmpin[i:(i + winsize)]))
+        lout.append(func(tmpin[i:(i+winsize)]))
     assert(len(lin) == len(lout))
     return lout
-
 
 def dilatation(lin, winsize):
     """
     morphological dilation
     """
     return slidewinmap(lin, winsize, max)
-
 
 def erosion(lin, winsize):
     """
@@ -95,7 +88,6 @@ def erosion(lin, winsize):
 
 
 class LimsiSad(Analyzer):
-
     """
     Limsi Speech Activity Detection Systems
     LimsiSad performs frame level speech activity detection based on trained GMM models
@@ -155,13 +147,10 @@ class LimsiSad(Analyzer):
         super(LimsiSad, self).__init__()
 
         # feature extraction defition
-
-        feature_plan = [
-            'mfcc: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256',
-            'mfccd1: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256 > Derivate DOrder=1',
-            'mfccd2: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256 > Derivate DOrder=2',
-            'zcr: ZCR blockSize=1024 stepSize=256']
-
+        feature_plan = ['mfcc: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256',
+                        'mfccd1: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256 > Derivate DOrder=1',
+                        'mfccd2: MFCC CepsIgnoreFirstCoeff=0 blockSize=1024 stepSize=256 > Derivate DOrder=2',
+                        'zcr: ZCR blockSize=1024 stepSize=256']
         yaafe_analyzer = get_processor('yaafe')
         self.parents['yaafe'] = yaafe_analyzer(feature_plan=feature_plan,
                                                input_samplerate=16000)
@@ -177,8 +166,9 @@ class LimsiSad(Analyzer):
             raise ValueError(
                 "argument sad_model %s not supported. Supported values are 'etape' or 'maya'" % sad_model)
         self.sad_model = sad_model
-        picfname = os.path.join(
-            timeside.__path__[0], 'analyzer', 'trained_models', 'limsi_sad_%s.pkl' % sad_model)
+        path = os.path.split(__file__)[0]
+        models_dir = os.path.join(path, 'trained_models')
+        picfname = os.path.join(models_dir, 'limsi_sad_%s.pkl' % sad_model)
         self.gmms = pickle.load(open(picfname, 'rb'))
 
         self.dews = dews
@@ -217,10 +207,8 @@ class LimsiSad(Analyzer):
         zcr = yaafe_result['yaafe.zcr']['data_object']['value']
         features = np.concatenate((mfcc, mfccd1, mfccd2, zcr), axis=1)
 
-
         # compute log likelihood difference
-        res = 0.5 + 0.5 * \
-            (self.gmms[0].llh(features) - self.gmms[1].llh(features))
+        res = 0.5 + 0.5 * (self.gmms[0].llh(features) - self.gmms[1].llh(features))
 
         # bounds log likelihood difference
         if self.dllh_bounds is not None:
@@ -228,11 +216,8 @@ class LimsiSad(Analyzer):
             res = np.minimum(np.maximum(res,  mindiff), maxdiff)
 
         # performs dilation, erosion, erosion, dilatation
-        ws = int(
-            self.dews * float(self.input_samplerate) / self.input_stepsize)
-        deed_llh = dilatation(
-            erosion(erosion(dilatation(res, ws), ws), ws), ws)
-
+        ws = int(self.dews * float(self.input_samplerate ) / self.input_stepsize)
+        deed_llh = dilatation(erosion(erosion(dilatation(res, ws), ws), ws), ws)
 
         # infer speech and non speech segments from dilated
         # and erroded likelihood difference estimate
@@ -240,9 +225,7 @@ class LimsiSad(Analyzer):
         labels = []
         times = []
         durations = []
-
-        for i, val in enumerate([1 if e > self.speech_threshold else 0
-                                 for e in deed_llh]):
+        for i, val in enumerate([1 if e > self.speech_threshold else 0 for e in deed_llh]):
             if val != last:
                 labels.append(val)
                 durations.append(1)
@@ -250,42 +233,56 @@ class LimsiSad(Analyzer):
             else:
                 durations[-1] += 1
             last = val
+        times = [(float(e) * self.input_stepsize) / self.input_samplerate for e in times]
+        durations = [(float(e) * self.input_stepsize) / self.input_samplerate for e in durations]
 
-        times = [(float(e) * self.input_stepsize)
-                 / self.input_samplerate for e in times]
-        durations = [(float(e) * self.input_stepsize)
-                     / self.input_samplerate for e in durations]
 
-        # outputs the raw frame level speech/non speech log likelihood
-        # difference
+        # outputs the raw frame level speech/non speech log likelihood difference
         sad_result = self.new_result(data_mode='value', time_mode='framewise')
         sad_result.id_metadata.id += '.' + 'sad_lhh_diff'
-        sad_result.id_metadata.name += ' ' + \
-            'Speech Activity Detection Log Likelihood Difference'
+        sad_result.id_metadata.name += ' ' + 'Speech Activity Detection Log Likelihood Difference'
         sad_result.data_object.value = res
         self.add_result(sad_result)
 
         # outputs frame level speech/non speech log likelihood difference
         # altered with erosion and dilatation procedures
-        sad_de_result = self.new_result(
-            data_mode='value', time_mode='framewise')
+        sad_de_result = self.new_result(data_mode='value', time_mode='framewise')
         sad_de_result.id_metadata.id += '.' + 'sad_de_lhh_diff'
-        sad_de_result.id_metadata.name += ' ' + \
-            'Speech Activity Detection Log Likelihood Difference | dilat | erode'
+        sad_de_result.id_metadata.name += ' ' + 'Speech Activity Detection Log Likelihood Difference | dilat | erode'
         sad_de_result.data_object.value = deed_llh
         self.add_result(sad_de_result)
 
         # outputs speech/non speech segments
-        sad_seg_result = self.new_result(
-            data_mode='label', time_mode='segment')
+        sad_seg_result = self.new_result(data_mode='label', time_mode='segment')
         sad_seg_result.id_metadata.id += '.' + 'sad_segments'
-        sad_seg_result.id_metadata.name += ' ' + \
-            'Speech Activity Detection Segments'
+        sad_seg_result.id_metadata.name += ' ' + 'Speech Activity Detection Segments'
         sad_seg_result.data_object.label = labels
         sad_seg_result.data_object.time = times
         sad_seg_result.data_object.duration = durations
-        sad_seg_result.data_object.label_metadata.label = {
-            0: 'Not Speech', 1: 'Speech'}
-
+        sad_seg_result.data_object.label_metadata.label = {0: 'Not Speech', 1: 'Speech'}
 
         self.add_result(sad_seg_result)
+
+
+# Generate Grapher for Limsi SAD analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+# Etape Model
+DisplayLIMSI_SAD_etape = DisplayAnalyzer.create(
+    analyzer=LimsiSad,
+    analyzer_parameters={'sad_model': 'etape'},
+    result_id='limsi_sad.sad_segments',
+    grapher_id='grapher_limsi_sad_etape',
+    grapher_name='Speech activity (ETAPE)',
+    background='waveform',
+    staging=False)
+
+# Mayan Model
+DisplayLIMSI_SAD_maya = DisplayAnalyzer.create(
+    analyzer=LimsiSad,
+    analyzer_parameters={'sad_model': 'maya'},
+    result_id='limsi_sad.sad_segments',
+    grapher_id='grapher_limsi_sad_maya',
+    grapher_name='Speech activity (Mayan)',
+    background='waveform',
+    staging=False)
