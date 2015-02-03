@@ -1,3 +1,6 @@
+global-exclude *.pyc
+prune dist
+prune build
 include AUTHORS.txt
 include LICENSE.txt
 include README.rst
@@ -16,3 +19,4 @@ recursive-exclude build *
 recursive-exclude tests/samples *
 recursive-exclude tests/results *
 recursive-exclude doc/build *
+
