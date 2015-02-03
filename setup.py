@@ -6,6 +6,11 @@ from setuptools import setup, find_packages
 import sys
 from setuptools.command.test import test as TestCommand
 
+#try:
+#    import multiprocessing  # Workaround for http://bugs.python.org/issue15881
+#except ImportError:
+#    pass
+
 
 # Pytest
 class PyTest(TestCommand):
@@ -34,7 +39,7 @@ CLASSIFIERS = [
     'Topic :: Multimedia :: Sound/Audio :: Conversion',
     'Topic :: Scientific/Engineering :: Information Analysis',
     'Topic :: Software Development :: Libraries :: Python Modules',
-    ]
+]
 
 KEYWORDS = 'audio analysis features extraction MIR transcoding graph visualize plot HTML5 interactive metadata player'
 
@@ -44,6 +49,11 @@ setup(
     packages=find_packages(),
     install_requires=[
         'timeside',
+        # Dependencies for limsi_diarization
+        'py_sonicvisualiser',
+        'pyannote.core',
+        'pyannote.features',
+        'pyannote.algorithms',
         ],
     # PyPI
     name='TimeSide-Diadems',
@@ -63,3 +73,4 @@ setup(
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
     )
+
