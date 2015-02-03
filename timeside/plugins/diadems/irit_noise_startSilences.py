@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import
 
-import timeside
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
 from timeside.core.preprocessors import frames_adapter
