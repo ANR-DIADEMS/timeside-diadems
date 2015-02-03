@@ -23,13 +23,13 @@ from timeside.core import implements, interfacedoc, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 if not _WITH_YAAFE:
     raise ImportError('yaafelib must be missing')
-from timeside.analyzer.limsi_sad import LimsiSad
-import numpy as N
-import sys
+from timeside.plugins.diadems.limsi_sad import LimsiSad
+from timeside.plugins.analyzer.externals.yaafe import Yaafe
+import numpy as np
 
 from pyannote.features.audio.yaafe import YaafeFrame
 from pyannote.core.feature import SlidingWindowFeature
-from pyannote.core import Annotation, Segment
+from pyannote.core import Annotation
 from pyannote.algorithms.clustering.bic import BICClustering
 
 
@@ -39,9 +39,9 @@ def gauss_div(data, winsize):
     for i in xrange(winsize , len(data) - winsize +1):
         w1 = data[(i-winsize):i,:]
         w2 = data[i:(i+winsize),:]
-        meandiff = N.mean(w1, axis = 0) - N.mean(w2, axis = 0)
-        invstdprod = 1. / (N.std(w1, axis = 0) * N.std(w2, axis = 0))
-        ret.append(N.sum(meandiff * meandiff * invstdprod))
+        meandiff = np.mean(w1, axis = 0) - np.mean(w2, axis = 0)
+        invstdprod = 1. / (np.std(w1, axis = 0) * np.std(w2, axis = 0))
+        ret.append(np.sum(meandiff * meandiff * invstdprod))
 
     return ret
 
@@ -51,7 +51,7 @@ def segment(data, minsize):
     if len(data) == 0:
         return []
 
-    am = N.argmax(data)
+    am = np.argmax(data)
     if am <= minsize:
         ret1 = ([0] * am)
     else:
@@ -197,3 +197,15 @@ class LimsiDiarization(Analyzer):
             diar_res.data_object.label_metadata.label[lab] = str(lab)
 
         self.add_result(diar_res)
+
+
+# Generate Grapher for IRITSpeech4Hz analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+DisplayLimsiDiarization = DisplayAnalyzer.create(
+    analyzer=LimsiDiarization,
+    result_id='limsi_diarization.speakers',
+    grapher_id='grapher_limsi_diarization_speakers',
+    grapher_name='Speaker diarization',
+    background='waveform',
+    staging=False)

@@ -53,6 +53,7 @@ setup(
         'py_sonicvisualiser',
         'pyannote.core',
         'pyannote.features',
+        'pyannote.algorithms',
         ],
     # PyPI
     name='TimeSide-Diadems',
