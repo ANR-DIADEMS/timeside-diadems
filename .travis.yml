@@ -34,7 +34,6 @@ before_install:
  - source activate test-environment
 install:
  - pip install -r requirements.txt
- - python setup.py install
 
 
 # command to run tests

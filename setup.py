@@ -6,10 +6,10 @@ from setuptools import setup, find_packages
 import sys
 from setuptools.command.test import test as TestCommand
 
-try:
-    import multiprocessing  # Workaround for http://bugs.python.org/issue15881
-except ImportError:
-    pass
+#try:
+#    import multiprocessing  # Workaround for http://bugs.python.org/issue15881
+#except ImportError:
+#    pass
 
 
 # Pytest
@@ -49,7 +49,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'timeside',
-        # Dependencies from diadems processors
+        # Dependencies for limsi_diarization
         'py_sonicvisualiser',
         'pyannote.core',
         'pyannote.features',
