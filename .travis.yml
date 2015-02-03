@@ -47,4 +47,4 @@ script:
  - coverage run --source=timeside.plugins.diadems setup.py test
 
 after_success:
- #- coveralls
+ - coveralls
