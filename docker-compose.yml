@@ -76,3 +76,6 @@ app:
     - "9000:9000"
   expose:
     - "8000" #default runserver wsgi port
+  links:
+    - rabbitmq
+
