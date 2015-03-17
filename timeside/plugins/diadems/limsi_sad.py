@@ -22,7 +22,7 @@
 from timeside.core import implements, interfacedoc, get_processor, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 
-from timeside.core.tools.parameters import Enum, HasTraits, Float, Tuple
+from timeside.core.tools.parameters import Enum, HasTraits, Float
 
 import numpy as np
 import pickle
@@ -108,10 +108,11 @@ class LimsiSad(Analyzer):
         sad_model = Enum('etape', 'maya')
         dews = Float
         speech_threshold = Float
-        dllh_bounds = Tuple(Float, Float)
+        dllh_min = Float
+        dllh_max = Float
 
     def __init__(self, sad_model='etape', dews=0.2, speech_threshold=1.,
-                 dllh_bounds=(-10., 10.)):
+                 dllh_min = -10., dllh_max = 10.):
         """
         Parameters:
         ----------
@@ -139,7 +140,7 @@ class LimsiSad(Analyzer):
         speech_threshold: threshold used for speech/non speech decision
           based on the log likelihood difference
 
-        dllh_bounds: raw log likelihood difference estimates will be bound
+        dllh_min, dllh_max: raw log likelihood difference estimates will be bound
           according this (min_llh_difference, max_llh_difference) tuple
           Usefull for plotting log likelihood differences
           if set to None, no bounding will be done
@@ -173,7 +174,8 @@ class LimsiSad(Analyzer):
 
         self.dews = dews
         self.speech_threshold = speech_threshold
-        self.dllh_bounds = dllh_bounds
+        self.dllh_min = dllh_min
+        self.dllh_max = dllh_max
 
     @staticmethod
     @interfacedoc
@@ -211,9 +213,8 @@ class LimsiSad(Analyzer):
         res = 0.5 + 0.5 * (self.gmms[0].llh(features) - self.gmms[1].llh(features))
 
         # bounds log likelihood difference
-        if self.dllh_bounds is not None:
-            mindiff, maxdiff = self.dllh_bounds
-            res = np.minimum(np.maximum(res,  mindiff), maxdiff)
+        if self.dllh_min is not None and self.dllh_max is not None:
+            res = np.minimum(np.maximum(res,  self.dllh_min), self.dllh_max)
 
         # performs dilation, erosion, erosion, dilatation
         ws = int(self.dews * float(self.input_samplerate ) / self.input_stepsize)
