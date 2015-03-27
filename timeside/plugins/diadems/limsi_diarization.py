@@ -32,6 +32,7 @@ from pyannote.core.feature import SlidingWindowFeature
 from pyannote.core import Annotation
 from pyannote.algorithms.clustering.bic import BICClustering
 
+from timeside.core.tools.parameters import HasTraits, Float, Enum
 
 
 def gauss_div(data, winsize):
@@ -66,7 +67,15 @@ def segment(data, minsize):
 class LimsiDiarization(Analyzer):
     implements(IAnalyzer)
 
-    def __init__(self, sad_analyzer=None, gdiff_win_size_sec=5.,
+    # Define Parameters
+    class _Param(HasTraits):
+        sad_model = Enum('etape', 'maya')
+        gdiff_win_size_sec = Float
+        min_seg_size_sec = Float 
+        bic_penalty_coeff = Float
+
+
+    def __init__(self, sad_model='etape', gdiff_win_size_sec=5.,
                  min_seg_size_sec=2.5, bic_penalty_coeff=0.5):
         super(LimsiDiarization, self).__init__()
 
@@ -74,8 +83,7 @@ class LimsiDiarization(Analyzer):
         self.min_seg_size_sec = min_seg_size_sec
         self.bic_penalty_coeff = bic_penalty_coeff
 
-        if sad_analyzer is None:
-            sad_analyzer = LimsiSad('etape')
+        sad_analyzer = LimsiSad(sad_model = sad_model)
         self.sad_analyzer = sad_analyzer
         self.parents['sad_analyzer'] = sad_analyzer
 
@@ -204,8 +212,18 @@ from timeside.core.grapher import DisplayAnalyzer
 
 DisplayLimsiDiarization = DisplayAnalyzer.create(
     analyzer=LimsiDiarization,
+    analyzer_parameters={'sad_model': 'etape'},
     result_id='limsi_diarization.speakers',
     grapher_id='grapher_limsi_diarization_speakers',
-    grapher_name='Speaker diarization',
+    grapher_name='Speaker diarization (ETAPE)',
+    background='waveform',
+    staging=False)
+
+DisplayLimsiDiarization = DisplayAnalyzer.create(
+    analyzer=LimsiDiarization, 
+    analyzer_parameters={'sad_model': 'maya'},
+    result_id='limsi_diarization.speakers',
+    grapher_id='grapher_limsi_diarization_speakers_maya',
+    grapher_name='Speaker diarization (Mayan)',
     background='waveform',
     staging=False)
