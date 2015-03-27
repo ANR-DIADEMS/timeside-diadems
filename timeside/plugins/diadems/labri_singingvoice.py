@@ -93,7 +93,7 @@ class LabriSing(Analyzer):
     @staticmethod
     @interfacedoc
     def id():
-        return "labri_sing"
+        return "labri_singing"
 
     @staticmethod
     @interfacedoc
@@ -210,9 +210,10 @@ class LabriSing(Analyzer):
         # TF: pour la suite, il faut voir ce que tu veux faire comme resultat : une segmentation 'sing'/'no sing' c'est ça ?
 
         # JLR : L'idée serait d'enregistrer les segments sous la forme [debut fin label]
-        sing_result = self.new_result(data_mode='value', time_mode='framewise')
-        sing_result.id_metadata.id += '.' + 'sing_llh_diff'
-        sing_result.id_metadata.name += ' ' + \
-            'Singing voice detection Log Likelihood Difference'
-        sing_result.data_object.value = result
+        sing_result = self.new_result(data_mode='label', time_mode='segment')
+        #sing_result.id_metadata.id += '.' + 'segment'
+        sing_result.data_object.label = label
+        sing_result.data_object.time = debut
+        sing_result.data_object.duration = fin - debut
+        
         self.process_pipe.results.add(sing_result)
