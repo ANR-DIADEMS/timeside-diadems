@@ -17,19 +17,39 @@
 # You should have received a copy of the GNU General Public License
 # along with TimeSide.  If not, see <http://www.gnu.org/licenses/>.
 
-# Author: JL Rouas <rouas@labri.fr>
-from __future__ import absolute_import
+# Authors:
+# JL Rouas <rouas@labri.fr>
+# Thomas Fillon <thomas@parisson.com>
 
-from timeside.core import implements, interfacedoc, get_processor
+from __future__ import absolute_import
+from __future__ import division
+
+from timeside.core import implements, interfacedoc, get_processor, _WITH_AUBIO
 from timeside.core.analyzer import Analyzer, IAnalyzer
 import timeside
 
 import yaafelib
-import numpy
+import numpy as np 
 import pickle
 import os.path
 
-from timeside.analyzer.externals.aubio_temporal import AubioTemporal
+# Require Aubio
+if not _WITH_AUBIO:
+    raise ImportError('Aubio librairy is missing')
+
+
+# TODO: use Limsi_SAD GMM
+def llh(gmm, x):
+    n_samples, n_dim = x.shape
+    llh = -0.5 * (n_dim * np.log(2 * np.pi) + np.sum(np.log(gmm.covars_), 1)
+                  + np.sum((gmm.means_ ** 2) / gmm.covars_, 1)
+                  - 2 * np.dot(x, (gmm.means_ / gmm.covars_).T)
+                  + np.dot(x ** 2, (1.0 / gmm.covars_).T))
+    + np.log(gmm.weights_)
+    m = np.amax(llh,1)
+    dif = llh - np.atleast_2d(m).T
+    return m + np.log(np.sum(np.exp(dif),1))
+    
 
 class LabriSing(Analyzer):
 
@@ -41,7 +61,7 @@ class LabriSing(Analyzer):
     """
     implements(IAnalyzer)
 
-    def __init__(self,  blocksize=1024, stepsize=None, samplerate=None):
+    def __init__(self):
         """
         Parameters:
         ----------
@@ -49,45 +69,25 @@ class LabriSing(Analyzer):
         super(LabriSing, self).__init__()
 
         # feature extraction defition
-        spec = yaafelib.FeaturePlan(sample_rate=16000)
-        spec.addFeature('mfcc: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12')
-        spec.addFeature('e: Energy blockSize=480 stepSize=160')
-        spec.addFeature('mfcc_d1: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=1')
-        spec.addFeature('e_d1: Energy blockSize=480 stepSize=160 > Derivate DOrder=1')
-        spec.addFeature('mfcc_d2: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=2')
-        spec.addFeature('e_d2: Energy blockSize=480 stepSize=160 > Derivate DOrder=2')
+        feature_plan = ['mfcc: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12',
+                        'e: Energy blockSize=480 stepSize=160',
+                        'mfcc_d1: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=1',
+                        'e_d1: Energy blockSize=480 stepSize=160 > Derivate DOrder=1',
+                        'mfcc_d2: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=2',
+                        'e_d2: Energy blockSize=480 stepSize=160 > Derivate DOrder=2']
+        self.parents['yaafe'] = get_processor('yaafe')(feature_plan=feature_plan,
+                                                       input_samplerate=16000)
 
-        parent_analyzer = get_processor('yaafe')(spec)
-        self.parents.append(parent_analyzer)
-        self.parents.append(AubioTemporal())  # TF: ici on rajoute AubioTemporal() comme parent
+        
+        self.parents['aubio_temporal'] =get_processor('aubio_temporal')()  # TF: ici on rajoute AubioTemporal() comme parent
 
 
         # these are not really taken into account by the system
         # these are bypassed by yaafe feature plan
         # BUT they are important for aubio (onset detection)
-        self.input_blocksize = blocksize
-        if stepsize:
-            self.input_stepsize = stepsize
-        else:
-            self.input_stepsize = blocksize / 2
-
-        self.input_samplerate=16000
-
-
-
-
-    def llh(gmm, x):
-        n_samples, n_dim = x.shape
-        llh = -0.5 * (n_dim * numpy.log(2 * numpy.pi) + numpy.sum(numpy.log(gmm.covars_), 1)
-                      + numpy.sum((gmm.means_ ** 2) / gmm.covars_, 1)
-                      - 2 * numpy.dot(x, (gmm.means_ / gmm.covars_).T)
-                      + numpy.dot(x ** 2, (1.0 / gmm.covars_).T))
-        + numpy.log(gmm.weights_)
-        m = numpy.amax(llh,1)
-        dif = llh - numpy.atleast_2d(m).T
-        return m + numpy.log(numpy.sum(numpy.exp(dif),1))
-
-
+        self.input_blocksize = 1024
+        self.input_stepsize = self.input_blocksize // 2
+        self.input_samplerate = self.force_samplerate
 
 
     @staticmethod
@@ -106,6 +106,10 @@ class LabriSing(Analyzer):
         # return the unit of the data dB, St, ...
         return "Log Probability difference"
 
+    @property
+    def force_samplerate(self):
+        return 16000
+
     def process(self, frames, eod=False):
         # A priori on a plus besoin de vérifer l'input_samplerate == 16000 mais on verra ça plus tard
         if self.input_samplerate != 16000:
@@ -115,32 +119,32 @@ class LabriSing(Analyzer):
         return frames, eod
 
     def post_process(self):
-        yaafe_result = self.process_pipe.results
-        mfcc = yaafe_result.get_result_by_id('yaafe.mfcc')['data_object']['value']
-        mfccd1 = yaafe_result.get_result_by_id('yaafe.mfcc_d1')['data_object']['value']
-        mfccd2 = yaafe_result.get_result_by_id('yaafe.mfcc_d2')['data_object']['value']
-        e = yaafe_result.get_result_by_id('yaafe.e')['data_object']['value']
-        ed1 = yaafe_result.get_result_by_id('yaafe.e_d1')['data_object']['value']
-        ed2 = yaafe_result.get_result_by_id('yaafe.e_d2')['data_object']['value']
+        yaafe_result = self.process_pipe.results[self.parents['yaafe'].uuid()]
+        mfcc = yaafe_result['yaafe.mfcc']['data_object']['value']
+        mfccd1 = yaafe_result['yaafe.mfcc_d1']['data_object']['value']
+        mfccd2 = yaafe_result['yaafe.mfcc_d2']['data_object']['value']
+        e = yaafe_result['yaafe.e']['data_object']['value']
+        ed1 = yaafe_result['yaafe.e_d1']['data_object']['value']
+        ed2 = yaafe_result['yaafe.e_d2']['data_object']['value']
 
-        features = numpy.concatenate((mfcc, e, mfccd1, ed1, mfccd2, ed2), axis=1)
-
-        print len(features)
-        print features.shape
+        features = np.concatenate((mfcc, e, mfccd1, ed1, mfccd2, ed2), axis=1)
 
         # to load the gmm
-        singfname = os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', 'sing.512.gmm.sklearn.pickle')
-        nosingfname = os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', 'nosing.512.gmm.sklearn.pickle')
+        path = os.path.split(__file__)[0]
+        models_dir = os.path.join(path, 'trained_models')
+        singfname = os.path.join(models_dir, 'sing.512.gmm.sklearn.pickle')
+        nosingfname = os.path.join(models_dir, 'nosing.512.gmm.sklearn.pickle')
 
         # llh
-        singmm=pickle.load(open('sing.512.gmm.sklearn.pickle', 'rb'))
-        nosingmm=pickle.load(open('nosing.512.gmm.sklearn.pickle', 'rb'))
+        singmm=pickle.load(open(singfname, 'rb'))
+        nosingmm=pickle.load(open(nosingfname, 'rb'))
 
         # llh diff
         result = 0.5 + 0.5 * (llh(singmm,features) - llh(nosingmm,features))
 
         # onsets
-        onsets = self.process_pipe.results.get_result_by_id('aubio_temporal.onset').time
+        aubio_t_res = self.process_pipe.results[self.parents['aubio_temporal'].uuid()]
+        onsets = aubio_t_res['aubio_temporal.onset'].time
 
         debut = []  # TF: as-tu vraiment besoin d'une liste ou simplement de garder une référence au précédent onset ?
         fin = []    # TF: as-tu vraiment besoin d'une liste ou simplement de garder une référence à l'onset courant ?
@@ -157,14 +161,14 @@ class LabriSing(Analyzer):
             for b in range(previous_onset, current_onset):
                 sum += result[b]
             if sum > 0:
-                current_label = 'sing'
+                current_label = 1  # Singing
             else:
-                current_label ='no'
+                current_label = 0  # No singing
 
             fin.append(current_onset)
             debut.append(current_onset)
             label.append(current_label)
-            print("[%d %d] (%d ms) %s (%f)") % (previous_onset, current_onset,  (current_onset-previous_onset)*10, current_label,sum)
+            #print("[%d %d] (%d ms) %s (%f)") % (previous_onset, current_onset,  (current_onset-previous_onset)*10, current_label,sum)
             previous_onset = current_onset
 
         # last segment
@@ -173,38 +177,38 @@ class LabriSing(Analyzer):
         for b in range(previous_onset, current_onset):
             sum += result[b]
         if sum > 0:
-            current_label = 'sing'
+            current_label = 1  # Singing
         else:
-            current_label ='no'
+            current_label = 0  # No singing
         fin.append(current_onset)
         label.append(current_label)
-        print("[%d %d] (%d ms) %s (%f)") % (previous_onset, current_onset,  (current_onset-previous_onset)*10, current_label,sum)
+        #print("[%d %d] (%d ms) %s (%f)") % (previous_onset, current_onset,  (current_onset-previous_onset)*10, current_label,sum)
 
-        print len(debut)
-        print len(fin)
-        print len(label)
+        #print len(debut)
+        #print len(fin)
+        #print len(label)
 
         # post processing :
         # delete segments < 0.5 s
         for a in range(len(debut)-1,0,-1):
             time=float(fin[a]-debut[a])/100
             if time < 0.5:
-                debut=numpy.delete(debut,a+1)
+                debut=np.delete(debut,a+1)
                 fin[a]=fin[a+1]
-                fin=numpy.delete(fin,a)
-                label=numpy.delete(label,a)
+                fin=np.delete(fin,a)
+                label=np.delete(label,a)
 
         # merge adjacent labels
         for a in range(len(debut)-2,0,-1):
             if label[a]==label[a-1]:
-                debut=numpy.delete(debut,a+1)
+                debut=np.delete(debut,a+1)
                 fin[a]=fin[a+1]
-                fin=numpy.delete(fin,a)
-                label=numpy.delete(label,a)
+                fin=np.delete(fin,a)
+                label=np.delete(label,a)
 
         for a in range(1,len(debut)):
             time=float(fin[a]-debut[a])/100
-            print("%d %f %f %s") % (a, debut[a]/100, fin[a]/100,label[a])
+            #print("%d %f %f %s") % (a, debut[a]/100, fin[a]/100,label[a])
 
 
         # TF: pour la suite, il faut voir ce que tu veux faire comme resultat : une segmentation 'sing'/'no sing' c'est ça ?
@@ -213,7 +217,22 @@ class LabriSing(Analyzer):
         sing_result = self.new_result(data_mode='label', time_mode='segment')
         #sing_result.id_metadata.id += '.' + 'segment'
         sing_result.data_object.label = label
-        sing_result.data_object.time = debut
-        sing_result.data_object.duration = fin - debut
-        
-        self.process_pipe.results.add(sing_result)
+        sing_result.data_object.time = np.asarray(debut/100)
+        sing_result.data_object.duration = (np.asarray(fin) - np.asarray(debut)) / 100
+        sing_result.data_object.label_metadata.label = {0: 'No Singing', 1: 'Singing'}
+        self.add_result(sing_result)
+
+
+# Generate Grapher for Labri Singing detection analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+# Labri Singing
+DisplayLABRI_SING = DisplayAnalyzer.create(
+    analyzer=LabriSing,
+    analyzer_parameters={},
+    result_id='labri_singing',
+    grapher_id='grapher_labri_singing',
+    grapher_name='Labri singing voice detection',
+    background='waveform',
+    staging=False)
+    

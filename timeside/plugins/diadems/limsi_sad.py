@@ -30,7 +30,7 @@ import os.path
 
 # Require Yaafe
 if not _WITH_YAAFE:
-    raise ImportError('yaafelib must be missing')
+    raise ImportError('yaafelib is missing')
 
 
 class GMM:
@@ -154,7 +154,7 @@ class LimsiSad(Analyzer):
                         'zcr: ZCR blockSize=1024 stepSize=256']
         yaafe_analyzer = get_processor('yaafe')
         self.parents['yaafe'] = yaafe_analyzer(feature_plan=feature_plan,
-                                               input_samplerate=16000)
+                                                input_samplerate=self.force_samplerate)
 
         # informative parameters
         # these are not really taken into account by the system
