@@ -218,7 +218,7 @@ class LabriSing(Analyzer):
         sing_result = self.new_result(data_mode='label', time_mode='segment')
         #sing_result.id_metadata.id += '.' + 'segment'
         sing_result.data_object.label = label
-        sing_result.data_object.time = np.asarray(debut/100)
+        sing_result.data_object.time = np.asarray(debut) /100
         sing_result.data_object.duration = (np.asarray(fin) - np.asarray(debut)) / 100
         sing_result.data_object.label_metadata.label = {0: 'No Singing', 1: 'Singing'}
         self.add_result(sing_result)

@@ -420,7 +420,7 @@ class LabriSMN(Analyzer):
         speech_result.id_metadata.id += '.' + 'speech'
         speech_result.id_metadata.name = "Labri Speech detection" 
         speech_result.data_object.label = speech
-        speech_result.data_object.time = np.asarray(start_speech/100)
+        speech_result.data_object.time = np.asarray(start_speech) / 100
         speech_result.data_object.duration = (np.asarray(end_speech) - np.asarray(start_speech)) / 100
         speech_result.data_object.label_metadata.label = {0: 'No Speech', 1: 'Speech'}
         self.add_result(speech_result)
@@ -429,7 +429,7 @@ class LabriSMN(Analyzer):
         music_result.id_metadata.id += '.' + 'music'
         music_result.id_metadata.name = "Labri Music detection" 
         music_result.data_object.label = music
-        music_result.data_object.time = np.asarray(start_music/100)
+        music_result.data_object.time = np.asarray(start_music) / 100
         music_result.data_object.duration = (np.asarray(end_music) - np.asarray(start_music)) / 100
         music_result.data_object.label_metadata.label = {0: 'No Music', 1: 'Music'}
         self.add_result(music_result)
