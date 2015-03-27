@@ -24,11 +24,10 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from timeside.core import implements, interfacedoc, get_processor, _WITH_AUBIO
+from timeside.core import implements, interfacedoc, get_processor, _WITH_AUBIO, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 import timeside
 
-import yaafelib
 import numpy as np 
 import pickle
 import os.path
@@ -36,7 +35,9 @@ import os.path
 # Require Aubio
 if not _WITH_AUBIO:
     raise ImportError('Aubio librairy is missing')
-
+# Require Yaafe
+if not _WITH_YAAFE:
+    raise ImportError('yaafelib is missing')
 
 # TODO: use Limsi_SAD GMM
 def llh(gmm, x):
@@ -76,7 +77,7 @@ class LabriSing(Analyzer):
                         'mfcc_d2: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=2',
                         'e_d2: Energy blockSize=480 stepSize=160 > Derivate DOrder=2']
         self.parents['yaafe'] = get_processor('yaafe')(feature_plan=feature_plan,
-                                                       input_samplerate=16000)
+                                                       input_samplerate=self.force_samplerate)
 
         
         self.parents['aubio_temporal'] =get_processor('aubio_temporal')()  # TF: ici on rajoute AubioTemporal() comme parent
@@ -190,7 +191,7 @@ class LabriSing(Analyzer):
 
         # post processing :
         # delete segments < 0.5 s
-        for a in range(len(debut)-1,0,-1):
+        for a in range(len(debut)-2,0,-1):
             time=float(fin[a]-debut[a])/100
             if time < 0.5:
                 debut=np.delete(debut,a+1)
