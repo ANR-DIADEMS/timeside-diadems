@@ -17,30 +17,36 @@
 # You should have received a copy of the GNU General Public License
 # along with TimeSide.  If not, see <http://www.gnu.org/licenses/>.
 
-# Author: JL Rouas <jean-luc.rouas@labri.fr>
+# Authors:
+#JL Rouas <jean-luc.rouas@labri.fr>
 # llh, gmm, and viterbi : Claude Barras <barras@limsi.fr>
+# Thomas Fillon <thomas@parisson.com>
 
 from __future__ import absolute_import
+from __future__ import division
 
-from timeside.core import implements, interfacedoc, get_processor
+from timeside.core import implements, interfacedoc, get_processor, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 import timeside
 
-import yaafelib
-import numpy
+import np
 import os.path
 
+# Require Yaafe
+if not _WITH_YAAFE
+    raise ImportError('yaafelib is missing')
 
+# TODO: use Limsi_SAD GMM
 def llh(gmm, x):
     n_samples, n_dim = x.shape
-    llh = -0.5 * (n_dim * numpy.log(2 * numpy.pi) + numpy.sum(numpy.log(gmm.covars_), 1)
-                  + numpy.sum((gmm.means_ ** 2) / gmm.covars_, 1)
-                  - 2 * numpy.dot(x, (gmm.means_ / gmm.covars_).T)
-                  + numpy.dot(x ** 2, (1.0 / gmm.covars_).T))
-    + numpy.log(gmm.weights_)
-    m = numpy.amax(llh,1)
-    dif = llh - numpy.atleast_2d(m).T
-    return m + numpy.log(numpy.sum(numpy.exp(dif),1))
+    llh = -0.5 * (n_dim * np.log(2 * np.pi) + np.sum(np.log(gmm.covars_), 1)
+                  + np.sum((gmm.means_ ** 2) / gmm.covars_, 1)
+                  - 2 * np.dot(x, (gmm.means_ / gmm.covars_).T)
+                  + np.dot(x ** 2, (1.0 / gmm.covars_).T))
+    + np.log(gmm.weights_)
+    m = np.amax(llh,1)
+    dif = llh - np.atleast_2d(m).T
+    return m + np.log(np.sum(np.exp(dif),1))
 
 
 def viterbijl(x, gmmset, transition=None, initial=None, final=None,
@@ -79,42 +85,42 @@ def viterbijl(x, gmmset, transition=None, initial=None, final=None,
 	if initial == None:
 		initial = range(nbunits)
 	else:
-	    initial = numpy.atleast_1d(initial)
+	    initial = np.atleast_1d(initial)
 
 	# if transition is not given, allow all transition with zero penalty except loop
     if transition == None:
-    	transition = numpy.zeros((nbunits, nbunits), dtype=float)
-    	numpy.fill_diagonal(transition, -inf)
+    	transition = np.zeros((nbunits, nbunits), dtype=float)
+    	np.fill_diagonal(transition, -inf)
     if transition.shape != (nbunits, nbunits):
     	raise Exception('Dimensions of transition square matrix %s is not matching the number of models %d' % (transition.shape,nbunits))
 
     # if duration is a scalar, duplicate to all units
-    duration += numpy.zeros((nbunits), dtype=int)
+    duration += np.zeros((nbunits), dtype=int)
     if duration.shape != (nbunits,):
     	raise Exception('Dimension of duration array %s is not matching the number of models %d' % (transition.shape,nbunits))
 
     # if penaly is a scalar, duplicate to all units
-    penalty += numpy.zeros((nbunits),dtype=int)
+    penalty += np.zeros((nbunits),dtype=int)
 
     # cumul is an array of cumulated llh of all states for all units stacked
     # entry[i] is the row index of the first state of model i
     # exit[i] is the row index of the last state of model i
-    entry = numpy.zeros((nbunits), dtype=int)
-    exit = numpy.zeros((nbunits), dtype=int)
+    entry = np.zeros((nbunits), dtype=int)
+    exit = np.zeros((nbunits), dtype=int)
     nbstates = 0
     for i in range(nbunits):
         entry[i] = nbstates
         nbstates += duration[i]
         exit[i] = nbstates - 1
-    cumul = numpy.zeros((nbstates,2), dtype=float); cumul.fill(-inf)
+    cumul = np.zeros((nbstates,2), dtype=float); cumul.fill(-inf)
 
     # back_unit[t,i] is best incoming unit at frame t for unit i
-    back_unit = numpy.zeros((len(x), nbunits), dtype=int); back_unit.fill(-1)
+    back_unit = np.zeros((len(x), nbunits), dtype=int); back_unit.fill(-1)
     # back_len[t,i] is internal length of best path finishing at frame t in unit i
-    back_len = numpy.zeros((len(x), nbunits), dtype=int); back_len.fill(-1)
+    back_len = np.zeros((len(x), nbunits), dtype=int); back_len.fill(-1)
 
     # pre-compute LLH values
-    logl = numpy.zeros((len(x), nbunits), dtype=float)
+    logl = np.zeros((len(x), nbunits), dtype=float)
     for i in range(nbunits):
         logl[:,i] = llh(gmmset[i],x)
 
@@ -131,7 +137,7 @@ def viterbijl(x, gmmset, transition=None, initial=None, final=None,
 
                 # first state can enter from other units (as allowed by transition matrix)
                 entry_score = cumul[exit[:],0] + transition[:,i]
-                j = numpy.argmax(entry_score)
+                j = np.argmax(entry_score)
                 back_unit[t,i] = j
                 cumul[entry[i],1] = entry_score[j] - penalty[i]
 
@@ -147,11 +153,11 @@ def viterbijl(x, gmmset, transition=None, initial=None, final=None,
                     back_len[t,i] = duration[i]
 
                 # add log-likelihood of frame for all states of current unit (only if necessary)
-                if numpy.max(cumul[entry[i]:exit[i]+1,1]) > -inf:
+                if np.max(cumul[entry[i]:exit[i]+1,1]) > -inf:
                     cumul[entry[i]:exit[i]+1,1] += logl[t,i]
 
         # shift cumulated matrix
-        cumul=numpy.roll(cumul,-1,axis=1)
+        cumul=np.roll(cumul,-1,axis=1)
 
         # beam search
         #if beam > 0:
@@ -159,13 +165,13 @@ def viterbijl(x, gmmset, transition=None, initial=None, final=None,
         #    cumul[cumul[:,0] < cutoff,:] = -inf
 
         if debug:
-            numpy.set_printoptions(precision=1,linewidth=200)
+            np.set_printoptions(precision=1,linewidth=200)
             print 't',t, 'cumul',cumul[:,0], 'len',back_len[t,:], 'unit',back_unit[t,:]
             #raw_input('press return')
 
     # select best final model
     if final == None:
-        i = numpy.argmax(cumul[exit[:],0])
+        i = np.argmax(cumul[exit[:],0])
     else:
         i = final
 
@@ -201,7 +207,7 @@ class LabriPMB(Analyzer):
     """
     implements(IAnalyzer)
 
-    def __init__(self,  blocksize=1024, stepsize=None, samplerate=None):
+    def __init__(self):
         """
         Parameters:
         ----------
@@ -209,28 +215,23 @@ class LabriPMB(Analyzer):
         super(LabriPMB, self).__init__()
 
         # feature extraction defition
-        spec = yaafelib.FeaturePlan(sample_rate=16000)
-        spec.addFeature('mfcc: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12')
-        spec.addFeature('e: Energy blockSize=480 stepSize=160')
-        spec.addFeature('mfcc_d1: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=1')
-        spec.addFeature('e_d1: Energy blockSize=480 stepSize=160 > Derivate DOrder=1')
-        spec.addFeature('mfcc_d2: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=2')
-        spec.addFeature('e_d2: Energy blockSize=480 stepSize=160 > Derivate DOrder=2')
-
-        parent_analyzer = get_processor('yaafe')(spec)
-        self.parents.append(parent_analyzer)
+        feature_plan = ['mfcc: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12',
+                        'e: Energy blockSize=480 stepSize=160',
+                        'mfcc_d1: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=1',
+                        'e_d1: Energy blockSize=480 stepSize=160 > Derivate DOrder=1',
+                        'mfcc_d2: MFCC blockSize=480 stepSize=160 MelMinFreq=20 MelMaxFreq=5000 MelNbFilters=22 CepsNbCoeffs=12 > Derivate DOrder=2',
+                        'e_d2: Energy blockSize=480 stepSize=160 > Derivate DOrder=2']
+        self.parents['yaafe'] = get_processor('yaafe')(feature_plan=feature_plan,
+                                                       input_samplerate=self.force_samplerate)
 
         # these are not really taken into account by the system
         # these are bypassed by yaafe feature plan
         # BUT they are important for aubio (onset detection)
-        self.input_blocksize = blocksize
-        if stepsize:
-            self.input_stepsize = stepsize
-        else:
-            self.input_stepsize = blocksize / 2
+        self.input_blocksize = 1024
+        self.input_stepsize = self.input_blocksize // 2
+        self.input_samplerate = self.force_samplerate
 
-        self.input_samplerate=16000
-
+        
     @staticmethod
     @interfacedoc
     def id():
@@ -247,6 +248,10 @@ class LabriPMB(Analyzer):
         # return the unit of the data dB, St, ...
         return "Log Probability difference"
 
+    @property
+    def force_samplerate(self):
+        return 16000
+
     def process(self, frames, eod=False):
         # A priori on a plus besoin de vérifer l'input_samplerate == 16000 mais on verra ça plus tard
         if self.input_samplerate != 16000:
@@ -256,104 +261,95 @@ class LabriPMB(Analyzer):
         return frames, eod
 
     def post_process(self):
-        yaafe_result = self.process_pipe.results
-        mfcc = yaafe_result.get_result_by_id('yaafe.mfcc')['data_object']['value']
-        mfccd1 = yaafe_result.get_result_by_id('yaafe.mfcc_d1')['data_object']['value']
-        mfccd2 = yaafe_result.get_result_by_id('yaafe.mfcc_d2')['data_object']['value']
-        e = yaafe_result.get_result_by_id('yaafe.e')['data_object']['value']
-        ed1 = yaafe_result.get_result_by_id('yaafe.e_d1')['data_object']['value']
-        ed2 = yaafe_result.get_result_by_id('yaafe.e_d2')['data_object']['value']
+        yaafe_result = self.process_pipe.results[self.parents['yaafe'].uuid()]
+        mfcc = yaafe_result['yaafe.mfcc']['data_object']['value']
+        mfccd1 = yaafe_result['yaafe.mfcc_d1']['data_object']['value']
+        mfccd2 = yaafe_result['yaafe.mfcc_d2']['data_object']['value']
+        e = yaafe_result['yaafe.e']['data_object']['value']
+        ed1 = yaafe_result['yaafe.e_d1']['data_object']['value']
+        ed2 = yaafe_result['yaafe.e_d2']['data_object']['value']
 
-        features = numpy.concatenate((mfcc, e, mfccd1, ed1, mfccd2, ed2), axis=1)
+        features = np.concatenate((mfcc, e, mfccd1, ed1, mfccd2, ed2), axis=1)
 
-        print len(features)
-        print features.shape
 
         # to load the gmm
-#        gmms[0] = os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '1___merged___jingle+speech.256.pkl')
-#        gmms[1] = os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '2___merged___applause+other+speech.256.pkl')
-#        nosingfname = os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', 'nosing.512.gmm.hdf5')
-        # llh
-#        sing = bob.machine.GMMMachine(bob.io.HDF5File(singfname))
-#        nosing = bob.machine.GMMMachine(bob.io.HDF5File(nosingfname))
-        gmms[0]=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '1___merged___jingle+speech.256.pkl')))
-
-        gmm10=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '10___merged___applause+other.256.pkl')))
-        gmm10.id='applause+other'
-        gmm11=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '11___merged___applause+music+other.256.pkl')))
-        gmm11.id='applause+music+other'
-        gmm12=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '12___merged___advertising+music+other+speech.256.pkl')))
-        gmm12.id='advertising+music+other+speech'
-        gmm13=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '13___merged___multiple_speech2+other+speech.256.pkl')))
-        gmm13.id='multiple_speech2+other+speech'
-        gmm14=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '14___merged___multiple_speech1+other+speech.256.pkl')))
-        gmm14.id='multiple_speech1+other+speech'
-        gmm15=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '15___merged___laugh+music+other.256.pkl')))
-        gmm15.id='laugh+music+other'
-        gmm16=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '16___merged___advertising+other+speech.256.pkl')))
-        gmm16.id='advertising+other+speech'
-        gmm17=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '17___merged___advertising+music.256.pkl')))
-        gmm17.id='advertising+music'
-        gmm18=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '18___merged___multiple_speech1+speech.256.pkl')))
-        gmm18.id='multiple_speech1+speech'
-        gmm19=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '19___merged___multiple_speech1+music+speech.256.pkl')))
-        gmm19.id='multiple_speech1+music+speech'
-        gmm1=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '1___merged___jingle+speech.256.pkl')))
-        gmm1.id='jingle+speech'
-        gmm20=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '20___merged___jingle+music+speech.256.pkl')))
-        gmm20.id='jingle+music+speech'
-        gmm21=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '21___merged___laugh+other+speech.256.pkl')))
-        gmm21.id='laugh+other+speech'
-        gmm22=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '22___merged___laugh+other.256.pkl')))
-        gmm22.id='laugh+other'
-        gmm23=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '23___merged___multiple_speech2+speech.256.pkl')))
-        gmm23.id='multiple_speech2+speech'
-        gmm24=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '24___merged___advertising+speech.256.pkl')))
-        gmm24.id='advertising+speech'
-        gmm25=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '25___merged___jingle+music.256.pkl')))
-        gmm25.id='jingle+music'
-        gmm26=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '26___merged___music+other+speech.256.pkl')))
-        gmm26.id='music+other+speech'
-        gmm27=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '27___merged___null.256.pkl')))
-        gmm27.id='null'
-        gmm28=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '28___merged___advertising+music+speech.256.pkl')))
-        gmm28.id='advertising+music+speech'
-        gmm29=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '29___merged___music+other.256.pkl')))
-        gmm29.id='music+other'
-        gmm2=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '2___merged___applause+other+speech.256.pkl')))
-        gmm2.id='applause+other+speech'
-        gmm30=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '30___merged___other.256.pkl')))
-        gmm30.id='other'
-        gmm31=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '31___merged___other+speech.256.pkl')))
-        gmm31.id='other+speech'
-        gmm32=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '32___merged___music+speech.256.pkl')))
-        gmm32.id='music+speech'
-        gmm33=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '33___merged___speech.256.pkl')))
-        gmm33.id='speech'
-        gmm3=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '3___merged___jingle+music+other.256.pkl')))
-        gmm3.id='jingle+music+other'
-        gmm4=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '4___merged___advertising+other.256.pkl')))
-        gmm4.id='advertising+other'
-        gmm5=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '5___merged___advertising+music+other.256.pkl')))
-        gmm5.id='advertising+music+other'
-        gmm6=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '6___merged___multiple_speech2+music+speech.256.pkl')))
-        gmm6.id='multiple_speech2+music+speech'
-        gmm7=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '7___merged___acappella+music.256.pkl')))
-        gmm7.id='acappella+music'
-        gmm8=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '8___merged___laugh+music+other+speech.256.pkl')))
-        gmm8.id='laugh+music+other+speech'
-        gmm9=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '9___merged___multiple_speech1+music+other+speech.256.pkl')))
-        gmm9.id='multiple_speech1+music+other+speech'
-        gmm34=pickle.load(open(os.path.join(timeside.__path__[0], 'analyzer', 'trained_models', '34___merged___music.256.pkl')))
-        gmm34.id='music'
+        path = os.path.split(__file__)[0]
+        models_dir = os.path.join(path, 'trained_models')
 
 
-        gmms=[gmm1, gmm2, gmm3, gmm4, gmm5, gmm6, gmm7, gmm8, gmm9, gmm10, gmm11, gmm12, gmm13, gmm14, gmm15, gmm16, gmm17, gmm18, gmm19, gmm20, gmm21, gmm22, gmm23, gmm24, gmm25, gmm26, gmm27, gmm28, gmm29, gmm30, gmm31, gmm32, gmm33, gmm34]
+        gmms[0] = pickle.load(open(os.path.join(models_dir, '1___merged___jingle+speech.256.pkl')))
+
+        gmms[10] = pickle.load(open(os.path.join(models_dir, '10___merged___applause+other.256.pkl')))
+        gmms[10].id = 'applause+other'
+        gmms[11] = pickle.load(open(os.path.join(models_dir, '11___merged___applause+music+other.256.pkl')))
+        gmms[11].id = 'applause+music+other'
+        gmms[12] = pickle.load(open(os.path.join(models_dir, '12___merged___advertising+music+other+speech.256.pkl')))
+        gmms[12].id='advertising+music+other+speech'
+        gmms[13] = pickle.load(open(os.path.join(models_dir, '13___merged___multiple_speech2+other+speech.256.pkl')))
+        gmms[13].id='multiple_speech2+other+speech'
+        gmms[14] = pickle.load(open(os.path.join(models_dir, '14___merged___multiple_speech1+other+speech.256.pkl')))
+        gmms[14].id = 'multiple_speech1+other+speech'
+        gmms[15] = pickle.load(open(os.path.join(models_dir, '15___merged___laugh+music+other.256.pkl')))
+        gmms[15].id = 'laugh+music+other'
+        gmms[16] = pickle.load(open(os.path.join(models_dir, '16___merged___advertising+other+speech.256.pkl')))
+        gmms[16].id='advertising+other+speech'
+        gmms[17] = pickle.load(open(os.path.join(models_dir, '17___merged___advertising+music.256.pkl')))
+        gmms[17].id = 'advertising+music'
+        gmms[18] = pickle.load(open(os.path.join(models_dir, '18___merged___multiple_speech1+speech.256.pkl')))
+        gmms[18].id = 'multiple_speech1+speech'
+        gmms[19] = pickle.load(open(os.path.join(models_dir, '19___merged___multiple_speech1+music+speech.256.pkl')))
+        gmms[19].id = 'multiple_speech1+music+speech'
+        gmms[1] = pickle.load(open(os.path.join(models_dir, '1___merged___jingle+speech.256.pkl')))
+        gmms[1].id='jingle+speech'
+        gmms[20] = pickle.load(open(os.path.join(models_dir, '20___merged___jingle+music+speech.256.pkl')))
+        gmms[20].id = 'jingle+music+speech'
+        gmms[21] = pickle.load(open(os.path.join(models_dir, '21___merged___laugh+other+speech.256.pkl')))
+        gmms[21].id = 'laugh+other+speech'
+        gmms[22] = pickle.load(open(os.path.join(models_dir, '22___merged___laugh+other.256.pkl')))
+        gmms[22].id = 'laugh+other'
+        gmms[23] = pickle.load(open(os.path.join(models_dir, '23___merged___multiple_speech2+speech.256.pkl')))
+        gmms[23].id = 'multiple_speech2+speech'
+        gmms[24] = pickle.load(open(os.path.join(models_dir, '24___merged___advertising+speech.256.pkl')))
+        gmms[24].id = 'advertising+speech'
+        gmms[25] = pickle.load(open(os.path.join(models_dir, '25___merged___jingle+music.256.pkl')))
+        gmms[25].id='jingle+music'
+        gmms[26] = pickle.load(open(os.path.join(models_dir, '26___merged___music+other+speech.256.pkl')))
+        gmms[26].id = 'music+other+speech'
+        gmms[27] = pickle.load(open(os.path.join(models_dir, '27___merged___null.256.pkl')))
+        gmms[27].id = 'null'
+        gmms[28] = pickle.load(open(os.path.join(models_dir, '28___merged___advertising+music+speech.256.pkl')))
+        gmms[28].id = 'advertising+music+speech'
+        gmms[29] = pickle.load(open(os.path.join(models_dir, '29___merged___music+other.256.pkl')))
+        gmms[29].id = 'music+other'
+        gmms[2] = pickle.load(open(os.path.join(models_dir, '2___merged___applause+other+speech.256.pkl')))
+        gmms[2].id = 'applause+other+speech'
+        gmms[30] = pickle.load(open(os.path.join(models_dir, '30___merged___other.256.pkl')))
+        gmms[30].id = 'other'
+        gmms[31] = pickle.load(open(os.path.join(models_dir, '31___merged___other+speech.256.pkl')))
+        gmms[31].id = 'other+speech'
+        gmms[32] = pickle.load(open(os.path.join(models_dir, '32___merged___music+speech.256.pkl')))
+        gmms[32].id = 'music+speech'
+        gmms[33] = pickle.load(open(os.path.join(models_dir, '33___merged___speech.256.pkl')))
+        gmms[33].id = 'speech'
+        gmms[3] = pickle.load(open(os.path.join(models_dir, '3___merged___jingle+music+other.256.pkl')))
+        gmms[3].id = 'jingle+music+other'
+        gmms[4] = pickle.load(open(os.path.join(models_dir, '4___merged___advertising+other.256.pkl')))
+        gmms[4].id = 'advertising+other'
+        gmms[5] = pickle.load(open(os.path.join(models_dir, '5___merged___advertising+music+other.256.pkl')))
+        gmms[5].id = 'advertising+music+other'
+        gmms[6] = pickle.load(open(os.path.join(models_dir, '6___merged___multiple_speech2+music+speech.256.pkl')))
+        gmms[6].id = 'multiple_speech2+music+speech'
+        gmms[7] = pickle.load(open(os.path.join(models_dir, '7___merged___acappella+music.256.pkl')))
+        gmms[7].id = 'acappella+music'
+        gmms[8] = pickle.load(open(os.path.join(models_dir, '8___merged___laugh+music+other+speech.256.pkl')))
+        gmms[8].id = 'laugh+music+other+speech'
+        gmms[9] = pickle.load(open(os.path.join(models_dir, '9___merged___multiple_speech1+music+other+speech.256.pkl')))
+        gmms[9].id = 'multiple_speech1+music+other+speech'
+        gmms[34] = pickle.load(open(os.path.join(models_dir, '34___merged___music.256.pkl')))
+        gmms[34].id = 'music'
 
         # penalty = 50
         [score, back]=viterbijl.viterbijl(features,gmms, None,  None, None, 50)
-
-
 
         debut = []
         fin = []
@@ -376,11 +372,11 @@ class LabriPMB(Analyzer):
         for a in range(len(debut)-2,0,-1):
             time=float(fin[a]-debut[a])/100
             if time < 0.5:
-                debut=numpy.delete(debut,a+1)
+                debut=np.delete(debut,a+1)
                 fin[a]=fin[a+1]
-                fin=numpy.delete(fin,a)
-                speech=numpy.delete(speech,a)
-                music =numpy.delete(music,a)
+                fin=np.delete(fin,a)
+                speech=np.delete(speech,a)
+                music =np.delete(music,a)
 
         debutm=debut
         finm=fin
@@ -388,52 +384,52 @@ class LabriPMB(Analyzer):
         # merge adjacent labels (3 times)
         for a in range(len(debut)-2,0,-1):
             if speech[a]==speech[a-1]:
-                debut=numpy.delete(debut,a+1)
+                debut=np.delete(debut,a+1)
                 fin[a]=fin[a+1]
-                fin=numpy.delete(fin,a)
-                speech=numpy.delete(speech,a)
+                fin=np.delete(fin,a)
+                speech=np.delete(speech,a)
 
         # merge adjacent labels
         for a in range(len(debut)-2,0,-1):
             if speech[a]==speech[a-1]:
-                debut=numpy.delete(debut,a+1)
+                debut=np.delete(debut,a+1)
                 fin[a]=fin[a+1]
-                fin=numpy.delete(fin,a)
-                speech=numpy.delete(speech,a)
+                fin=np.delete(fin,a)
+                speech=np.delete(speech,a)
 
         # merge adjacent labels
         for a in range(len(debut)-2,0,-1):
             if speech[a]==speech[a-1]:
-                debut=numpy.delete(debut,a+1)
+                debut=np.delete(debut,a+1)
                 fin[a]=fin[a+1]
-                fin=numpy.delete(fin,a)
-                speech=numpy.delete(speech,a)
+                fin=np.delete(fin,a)
+                speech=np.delete(speech,a)
 
 ### MUSIC
 
         # merge adjacent labels (3 times)
         for a in range(len(debutm)-2,0,-1):
             if music[a]==music[a-1]:
-                debutm=numpy.delete(debutm,a+1)
+                debutm=np.delete(debutm,a+1)
                 finm[a]=finm[a+1]
-                finm=numpy.delete(finm,a)
-                music=numpy.delete(music,a)
+                finm=np.delete(finm,a)
+                music=np.delete(music,a)
 
         # merge adjacent labels
         for a in range(len(debutm)-2,0,-1):
             if music[a]==music[a-1]:
-                debutm=numpy.delete(debutm,a+1)
+                debutm=np.delete(debutm,a+1)
                 finm[a]=finm[a+1]
-                finm=numpy.delete(finm,a)
-                music=numpy.delete(music,a)
+                finm=np.delete(finm,a)
+                music=np.delete(music,a)
 
         # merge adjacent labels
         for a in range(len(debutm)-2,0,-1):
             if music[a]==music[a-1]:
-                debutm=numpy.delete(debutm,a+1)
+                debutm=np.delete(debutm,a+1)
                 finm[a]=finm[a+1]
-                finm=numpy.delete(finm,a)
-                music=numpy.delete(music,a)
+                finm=np.delete(finm,a)
+                music=np.delete(music,a)
 
 
         # display results
@@ -453,3 +449,25 @@ class LabriPMB(Analyzer):
 
         # JLR : L'idée serait d'enregistrer les segments sous la forme [debut fin label]
 
+        pmb_result = self.new_result(data_mode='label', time_mode='segment')
+        #pmb_result.id_metadata.id += '.' + 'segment'
+        pmb_result.data_object.label = label
+        pmb_result.data_object.time = np.asarray(debut/100)
+        pmb_result.data_object.duration = (np.asarray(fin) - np.asarray(debut)) / 100
+        pmb_result.data_object.label_metadata.label = {0: 'No Singing', 1: 'Singing'}
+        self.add_result(pmb_result)
+
+
+# Generate Grapher for Labri Singing detection analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+# Labri Singing
+DisplayLABRI_PMB = DisplayAnalyzer.create(
+    analyzer=LabriPMB,
+    analyzer_parameters={},
+    result_id='labri_pmb',
+    grapher_id='grapher_labri_PMB',
+    grapher_name='Labri PMB',
+    background='waveform',
+    staging=False)
+    
