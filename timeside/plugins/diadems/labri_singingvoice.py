@@ -192,12 +192,12 @@ class LabriSing(Analyzer):
         # post processing :
         # delete segments < 0.5 s
         for a in range(len(debut)-2,0,-1):
-            time=float(fin[a]-debut[a])/100
+            time = float(fin[a]-debut[a])/100
             if time < 0.5:
-                debut=np.delete(debut,a+1)
-                fin[a]=fin[a+1]
-                fin=np.delete(fin,a)
-                label=np.delete(label,a)
+                debut = np.delete(debut,a+1)
+                fin[a] = fin[a+1]
+                fin = np.delete(fin,a)
+                label = np.delete(label,a)
 
         # merge adjacent labels
         for a in range(len(debut)-2,0,-1):
