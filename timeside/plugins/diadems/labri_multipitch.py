@@ -29,13 +29,14 @@ import timeside
 
 ## plugin specific
 import sys, os
-REL_PATH='labri';
-PLUGIN_PATH=os.path.join(timeside.__path__[0], REL_PATH);
-sys.path.append(PLUGIN_PATH);
-sys.path.append(REL_PATH);		## can be commented
-from timeside.plugins.diadems.labri import fmultipitch
-import numpy, scipy
-from timeside.core.preprocessors import frames_adapter
+#REL_PATH='labri'
+#PLUGIN_PATH=os.path.join(timeside.__path__[0], REL_PATH)
+#sys.path.append(PLUGIN_PATH)
+#sys.path.append(REL_PATH)		## can be commented
+import fmultipitch
+import numpy as np
+
+from timeside.core.preprocessors import downmix_to_mono, frames_adapter
 
 class LABRIMultipitch(Analyzer):
 	"""
@@ -48,67 +49,66 @@ class LABRIMultipitch(Analyzer):
 	sound and music analysis (in french), Dec 2013]
 	[D. Fourer and S. Marchand. Informed Multiple-F0 Estimation
 	Applied to Monaural Audio Source Separation. Proc. EUSIPCO'12,
-	 Bucharest, Romania, August 2012]
+	Bucharest, Romania, August 2012]
 	"""
 	implements(IAnalyzer)
 
 	@interfacedoc
-	def setup(self, channels=None, samplerate=None, blocksize=None, totalframes=None):
-		super(LABRIMultipitch, self).setup(channels, samplerate, blocksize, totalframes)
-		self.Fs			= self.samplerate();
-		self.t_index 	= 0.;
-		self.result		= AnalyzerResultContainer();
-		self.values		= list();
+	def __init__(self, input_blocksize=2048):
+            super(LABRIMultipitch, self).__init__()
+	    self.values	= list()		     
+
 	@staticmethod
 	@interfacedoc
 	def id():
-		return "labri_multipitch"
+            return "labri_multipitch"
 
 	@staticmethod
 	@interfacedoc
 	def name():
-		return "Labri Multiple F0 estimation"
+             return "Labri Multiple F0 estimation"
 
 	@staticmethod
 	@interfacedoc
 	def unit():
-		# return the unit of the data dB, St, ...
-		return "F0 vector in Hz"
+	    # return the unit of the data dB, St, ...
+	    return "F0 vector in Hz"
 
 	def __str__(self):
-		return "Labeled Instrument segments"
+	    return "Labeled Instrument segments"
 
+	@downmix_to_mono    
+	@frames_adapter
 	def process(self, frames, eod=False):
+            if not eod:
+                #s,N = prepare_signal(frames)
+                N = frames.shape[0]
+		f0_candidates, t = fmultipitch.analysis(frames.astype(float), 
+							self.input_blocksize, 
+							self.input_samplerate)
+	        self.values.append([np.unique(np.array(np.squeeze(f0_candidates)))])
 
-		s,N = prepare_signal(frames);
-		self.t_index = self.t_index + float(N) / float(self.Fs);     ##time index
-		f0_candidates, t = fmultipitch.analysis(s, N, self.Fs);
-		self.values.append([numpy.unique(numpy.array(numpy.squeeze(f0_candidates))), self.t_index ]);   ## (F0_vector, time_t)
-
-		return frames, eod;
+	    return frames, eod
 
 	def post_process(self):
-		result 					= self.new_result(data_mode='value', time_mode='framewise')
-		result.data_object.value= np.vstack(self.values)
-
-		#self.add_result(result);    ## doesn't work !
-		self.result.add(result);
+            result = self.new_result(data_mode='value', time_mode='framewise')
+	    result.data_object.value= self.values
+	    self.add_result(result)
 
 ## prepare data before analysis
 def prepare_signal(s):
-	s = numpy.array(numpy.squeeze(s), float);
-
-	## Stereo to mono
-	if s.ndim > 1:
-		sz = numpy.shape(s);
-		if sz[0] < sz[1]:
-			s = s.T;
-		s = numpy.sum(s, axis=0);
-
-	sz = numpy.shape(s);
-	## normalize
-	N = len(s);
-	#signal = s/max(abs(s)) * 1.;
-	return s, N;
+    s = np.array(np.squeeze(s), float)
+    ## Stereo to mono
+    if s.ndim > 1:
+        sz = np.shape(s)
+	if sz[0] < sz[1]:
+            s = s.T
+	    s = np.sum(s, axis=0)
+	    
+    sz = np.shape(s)
+    ## normalize
+    N = len(s)
+    #signal = s/max(abs(s)) * 1.
+    return s, N
 
 
