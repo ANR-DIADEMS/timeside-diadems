@@ -30,7 +30,6 @@ before_install:
 # Install binary dependencies with conda
  - deps="setuptools pip coverage matplotlib h5py pytables pandas>=0.15.1 networkx nltk>=3.0 scikit-learn numexpr"
  - conda create -q -n test-environment $deps numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION python=$TRAVIS_PYTHON_VERSION
- - rm ~/miniconda/envs/test-environment/lib/libm.so.6 # use the system libm; see github.com/ContinuumIO/anaconda-issues/issues/182
  - source activate test-environment
 install:
  - pip install -r requirements.txt
