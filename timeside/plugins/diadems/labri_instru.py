@@ -19,7 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with TimeSide.  If not, see <http://www.gnu.org/licenses/>.
 
-# Author: D Fourer <dominique@fourer.fr> http://www.fourer.fr
+# Authors:
+#  Dominique Fourer <dominique@fourer.fr> http://www.fourer.fr
+#  Thomas Fillon <thomas@parisson.com>
 
 from timeside.core import Processor, implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
@@ -27,9 +29,9 @@ import numpy as np
 import scipy
 from timeside.core.preprocessors import frames_adapter, downmix_to_mono
 import timeside
-# plugin specific
 import sys
 import os
+
 from timeside.plugins.diadems.labri import timbre_descriptor
 from timeside.plugins.diadems.labri import my_tools as mt
 from timeside.plugins.diadems.labri import my_lda
@@ -59,6 +61,7 @@ class LABRIInstru(Analyzer):
         self.T_NOISE = -60      ## noise threshold in dB
 
         self.signal = np.array([],float)
+
         self.param_val = 0
         self.field_name = 0
         self.cur_pos = 0
@@ -162,8 +165,6 @@ class LABRIInstru(Analyzer):
         res_confidence_2.id_metadata.name += ' ' + 'Confidence methode 2'
         res_confidence_2.data_object.value = self.confidence_2
         self.add_result(res_confidence_2)
-        
-
         
 # Generate Grapher for Limsi SAD analyzer
 from timeside.core.grapher import DisplayAnalyzer
