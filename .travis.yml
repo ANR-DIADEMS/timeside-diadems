@@ -28,8 +28,7 @@ before_install:
 # Useful for debugging any issues with conda
  - conda info -a
 # Install binary dependencies with conda
- - deps="setuptools pip coverage matplotlib h5py pytables pandas>=0.15.1 networkx nltk>=3.0 scikit-learn numexpr"
- - conda create -q -n test-environment $deps numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION python=$TRAVIS_PYTHON_VERSION
+ - conda create -q -n test-environment -c thomasfillon --file conda-requirements.txt numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION python=$TRAVIS_PYTHON_VERSION
  - source activate test-environment
 install:
  - pip install -r requirements.txt
