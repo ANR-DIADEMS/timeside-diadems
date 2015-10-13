@@ -34,19 +34,27 @@ class IRITTempogram(Analyzer):
         self.parents['irit_diverg2'] = IRITDiverg()
         self.wLen = 10.0
         self.wStep = 0.5
-        self.fmin = 0
-        self.fmax = 2
-        self.nbin = 1024
+        self.fmin = 0.1
+        self.fmax = 5.0
+        self.nbin = 512
 
     @interfacedoc
-    def setup(self, channels=None, samplerate=None, blocksize=None,
-              totalframes=None):
+    def setup(self, channels=None, samplerate=None, blocksize=None, totalframes=None):
+        """
+
+        :param channels:
+        :param samplerate:
+        :param blocksize:
+        :param totalframes:
+        :return:
+        """
         super(IRITTempogram, self).setup(
             channels, samplerate, blocksize, totalframes)
         self.input_blocksize = int(self.wLen * samplerate)
         self.input_stepsize = int(self.wStep * samplerate)
         self.samples = []
         self.freqline = linspace(self.fmin, self.fmax, self.nbin)
+
     @staticmethod
     @interfacedoc
     def id():
@@ -76,41 +84,47 @@ class IRITTempogram(Analyzer):
         """
         res_irit_diverg = self.parents['irit_diverg2'].results
         segList = res_irit_diverg['irit_diverg2.segments'].time
+        segList = add_weights(segList, self.samples, self.samplerate(), 0.1)
 
-        segList = add_weights(segList, self.samples, self.samplerate(), 0.005)
         w = self.wLen / 2
         end = segList[-1][0]
-        tLine = arange(w, end - w, self.wStep)
-        frames = map(lambda x: getBoundariesInInterval(x-w, x+w, segList), tLine)
-        print frames[0]
-        tempogram = [get_tempo_spectrum(pos, wei, self.freqline) for pos, wei in frames]
+        tempogram = [get_tempo_spectrum(getBoundariesInInterval(t-w, t+w, segList), self.freqline)
+                     for t in arange(w, end - w, self.wStep)]
+
+        """
         from pylab import savefig, imshow
-        imshow(tempogram, aspect="auto")
-        savefig('toto.png')
+        #for c in segList :
+        #    plot([c[0], c[0]], [0, c[1]])
+
+        imshow(array(tempogram).T, aspect="auto", origin="lower", extent=[0, len(self.samples)/self.samplerate(),
+                                                                 self.fmin, self.fmax])
+        savefig('toto1.png')
+        """
         return
 
 
 def getBoundariesInInterval(start, stop, boundaries):
     """
     """
-    return map(array, zip(*[t for t in boundaries if start <= t[0] <= stop]))
+    return [t for t in boundaries if start <= t[0] <= stop]
 
 
 def add_weights(boundaries, data, fe, w_len):
     """
     Boundaries in samples
     """
-    data = array(data)
+    data = map(abs, data)
+    boundaries_sample = map(lambda b: int(b*fe), boundaries)
     w = w_len*fe
     l = len(data)
-    out_bounds = [(b, sum(abs(data[b*fe:min(b*fe+w, l)]))**2-sum(abs(data[max([0, b*fe-w]):b*fe]))**2)
-                  for b in boundaries]
 
-    return out_bounds
+    return zip(boundaries, [sum(data[b:int(min(b+w, l))])-sum(data[int(max([0, b-w])):b]) for b in boundaries_sample])
 
 
-def get_tempo_spectrum(pos, wei, freq_range):
+def get_tempo_spectrum(boundaries, freq_range):
     """
     """
+
+    pos, wei = map(array, zip(*boundaries))
     j = complex(0, 1)
-    return [abs(sum(exp(-2.0 * j * pi * f * pos)*wei)) for f in freq_range]
+    return map(lambda f: abs(sum(exp(-2.0 * j * pi * f * pos)*wei)), freq_range)
