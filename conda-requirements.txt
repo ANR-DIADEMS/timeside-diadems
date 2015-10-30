@@ -1,11 +1,9 @@
 # This file may be used to create an environment using:
 # $ conda create --name <env> --file <this file>
 # platform: linux-64
-aubio=0.4.2=np19py27_1
+aubio=0.4.2=np110py27_1
 cairo=1.12.18=5
 certifi=2015.9.6.2=py27_0
-conda=3.18.3=py27_0
-conda-env=2.4.4=py27_0
 coverage=4.0=py27_0
 decorator=4.0.4=py27_0
 fontconfig=2.11.1=5
