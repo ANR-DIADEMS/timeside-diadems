@@ -1,5 +1,5 @@
-pandas=0.15.2=np19py27_0
-scikit-learn=0.15.2=np19py27_0
-numexpr=2.3.1=np19py27_0
-nltk=3.0.1=np19py27_0
+pandas=0.17.0=np110py27_0
+scikit-learn=0.16.1=np110py27_0
+numexpr=2.4.4=np110py27_0
+nltk=3.1=py27_0
 progressbar=2.3=py27_0
