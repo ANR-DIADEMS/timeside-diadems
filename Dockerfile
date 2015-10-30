@@ -1,5 +1,5 @@
-# Copyright 2013 Thatcher Peskens
-# Copyright 2014 Guillaume Pellerin
+# Copyright 2015 Guillaume Pellerin
+# Copyright 2015 Thomas Fillon
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 FROM parisson/timeside:latest-dev
 
-MAINTAINER Guillaume Pellerin <yomguy@parisson.com>, Thomas fillon <thomas@parisson.com>
+MAINTAINER Guillaume Pellerin <yomguy@parisson.com>, Thomas Fillon <thomas@parisson.com>
 
 RUN mkdir /opt/TimeSide-Diadems
 WORKDIR /opt/TimeSide-Diadems
