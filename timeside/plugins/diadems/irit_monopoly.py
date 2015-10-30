@@ -22,7 +22,7 @@
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
 from numpy import mean, var, array, log
-from timeside.plugins.yin import getPitch
+from timeside.plugins.diadems.yin import getPitch
 from timeside.core.preprocessors import frames_adapter
 
 class IRITMonopoly(Analyzer):

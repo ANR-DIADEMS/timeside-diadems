@@ -21,7 +21,7 @@
 
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
-from timeside.plugins.analyzer.diadems.irit_diverg2 import IRITDiverg
+from timeside.plugins.diadems.irit_diverg2 import IRITDiverg
 from numpy import arange, array, exp, pi, linspace
 
 

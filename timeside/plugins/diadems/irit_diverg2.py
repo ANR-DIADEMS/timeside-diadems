@@ -22,7 +22,7 @@
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
 from timeside.plugins.analyzer.waveform import Waveform
-from timeside.plugins.diverg import segment
+from timeside.plugins.diadems.diverg import segment
 
 class IRITDiverg(Analyzer):
     implements(IAnalyzer)
