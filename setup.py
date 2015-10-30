@@ -71,10 +71,10 @@ setup(
    # Tests
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
-    ext_modules=[Extension('timeside.plugins.analyzer.yin',
+    ext_modules=[Extension('timeside.plugins.diadems.yin',
                            ['timeside/plugins/diadems/yin/pitch_yin.c',
                             'timeside/plugins/diadems/yin/pitchyin.c']),
-                 Extension('timeside.plugins.analyzer.diverg',
+                 Extension('timeside.plugins.diadems.diverg',
                            ['timeside/plugins/diadems/diverg/diverg.c',
                             'timeside/plugins/diadems/diverg/subdiv.c'])],
     )
