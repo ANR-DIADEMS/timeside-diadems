@@ -79,7 +79,7 @@ class IRITTempogram(Analyzer):
 
     def post_process(self):
         """
-        
+
         :return:
         """
         res_irit_diverg = self.parents['irit_diverg2'].results
@@ -91,6 +91,13 @@ class IRITTempogram(Analyzer):
         tempogram = [get_tempo_spectrum(getBoundariesInInterval(t-w, t+w, segList), self.freqline)
                      for t in arange(w, end - w, self.wStep)]
 
+        res_tempo = self.new_result(data_mode='value', time_mode='framewise')
+        res_tempo.data_object.value = tempogram
+        res_tempo.data_object.y_value = self.freqline*60  # Convert in bpm
+
+        self.add_result(res_tempo)
+
+
         """
         from pylab import savefig, imshow
         #for c in segList :
@@ -100,6 +107,7 @@ class IRITTempogram(Analyzer):
                                                                  self.fmin, self.fmax])
         savefig('toto1.png')
         """
+
         return
 
 
