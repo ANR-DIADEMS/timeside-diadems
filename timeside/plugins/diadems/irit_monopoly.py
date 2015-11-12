@@ -59,7 +59,7 @@ class IRITMonopoly(Analyzer):
     @staticmethod
     @interfacedoc
     def name():
-        return "IRIT Monophoniy / polyphony detector"
+        return "IRIT Monophony / polyphony detector"
 
     @staticmethod
     @interfacedoc
@@ -189,3 +189,16 @@ def weibull_likelihood(m, v, theta1, theta2, beta1, beta2, delta):
     pxy = c0+(beta1/delta-1)*c1+(beta2/delta-1)*c2+(delta-2)*log(b1+b2)+log(somme1+1/delta-1)-somme1
 
     return mean(pxy)
+
+
+
+# Generate Grapher for IRITMonopoly analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+DisplayMonopoly = DisplayAnalyzer.create(
+    analyzer=IRITMonopoly,
+    result_id='irit_monopoly.segments',
+    grapher_id='grapher_irit_monopoly_segments',
+    grapher_name='Mono/Polyphony segmentation',
+    background='waveform',
+    staging=False)
