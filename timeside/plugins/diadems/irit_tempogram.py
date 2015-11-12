@@ -136,3 +136,16 @@ def get_tempo_spectrum(boundaries, freq_range):
     pos, wei = map(array, zip(*boundaries))
     j = complex(0, 1)
     return map(lambda f: abs(sum(exp(-2.0 * j * pi * f * pos)*wei)), freq_range)
+
+
+
+
+# Generate Grapher for IRITSpeech4Hz analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+DisplayIritTempogram = DisplayAnalyzer.create(
+    analyzer=IRITTempogram,
+    result_id='irit_tempogram',
+    grapher_id='grapher_irit_tempogram',
+    grapher_name='Tempogram - Divergence',
+    staging=False)
