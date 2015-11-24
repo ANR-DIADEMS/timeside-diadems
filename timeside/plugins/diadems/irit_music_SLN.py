@@ -85,9 +85,7 @@ class IRITMusicSLN(Analyzer):
 
         # Confidence Index
         conf = [(s - self.threshold) / self.threshold if s < 2 * self.threshold else 1 for s in segLen]
-        from pylab import savefig, plot
-
-
+        
         segLenRes = self.new_result(data_mode='value', time_mode='framewise')
         segLenRes.id_metadata.id += '.' + 'energy_confidence'
         segLenRes.id_metadata.name += ' ' + 'Energy Confidence'
@@ -100,7 +98,7 @@ class IRITMusicSLN(Analyzer):
         convert = {False: 0, True: 1}
         label = {0: 'nonMusic', 1: 'Music'}
 
-        segList = segmentFromValues([s > self.threshold for s in segLen])
+        segList = segmentFromValues([s < self.threshold for s in segLen])
         # Hint : Median filtering could imrove smoothness of the result
         # from scipy.signal import medfilt
         # segList = segmentFromValues(medfilt(modEnergyValue > self.threshold, 31))
