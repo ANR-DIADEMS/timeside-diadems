@@ -229,7 +229,7 @@ class LabriSMN(Analyzer):
         self.input_stepsize = self.input_blocksize // 2
         self.input_samplerate = self.force_samplerate
 
-        
+
     @staticmethod
     @interfacedoc
     def id():
@@ -238,7 +238,7 @@ class LabriSMN(Analyzer):
     @staticmethod
     @interfacedoc
     def name():
-        return "Labri Speech/Music/Noise detection system"
+        return "Speech activity - SNM"
 
     @staticmethod
     @interfacedoc
@@ -312,11 +312,11 @@ class LabriSMN(Analyzer):
             '33___merged___speech.256.pkl',
             '34___merged___music.256.pkl'
             ]
-                       
+
         for model_file in model_list:
             gmmset.append(pickle.load(open(os.path.join(models_dir, model_file))))
             gmmset[-1].id = model_file.split('__merged___')[1].split('.256.pkl')[0]
-                   
+
         # penalty = 50
         [score, back] = viterbijl(features, gmmset, None,  None, None, 50)
 
@@ -327,11 +327,11 @@ class LabriSMN(Analyzer):
         for (deb, dur, lab) in back:
             start_speech.append(deb)
             end_speech.append(deb+dur)
-            #print " LAB ----> %s" % lab 
+            #print " LAB ----> %s" % lab
             if lab.find("speech") >= 0:
                 speech.append(1)  # Speech
             else:
-                speech.append(0)  # No Speech 
+                speech.append(0)  # No Speech
             if lab.find("music") >= 0:
                 music.append(1)  # Music
             else:
@@ -374,7 +374,7 @@ class LabriSMN(Analyzer):
                 end_speech[a] = end_speech[a+1]
                 end_speech = np.delete(end_speech,a)
                 speech = np.delete(speech,a)
- 
+
         ### MUSIC
 
         # merge adjacent labels (3 times)
@@ -415,10 +415,10 @@ class LabriSMN(Analyzer):
         ##     time = float(end_music[a]-start_music[a])/100
         ##     print("%f %f %s") % (float(start_music[a])/100, float(end_music[a])/100, music[a])
 
-        
+
         speech_result = self.new_result(data_mode='label', time_mode='segment')
         speech_result.id_metadata.id += '.' + 'speech'
-        speech_result.id_metadata.name = "Labri Speech detection" 
+        speech_result.id_metadata.name = "Labri Speech detection"
         speech_result.data_object.label = speech
         speech_result.data_object.time = np.asarray(start_speech) / 100
         speech_result.data_object.duration = (np.asarray(end_speech) - np.asarray(start_speech)) / 100
@@ -427,7 +427,7 @@ class LabriSMN(Analyzer):
 
         music_result = self.new_result(data_mode='label', time_mode='segment')
         music_result.id_metadata.id += '.' + 'music'
-        music_result.id_metadata.name = "Labri Music detection" 
+        music_result.id_metadata.name = "Labri Music detection"
         music_result.data_object.label = music
         music_result.data_object.time = np.asarray(start_music) / 100
         music_result.data_object.duration = (np.asarray(end_music) - np.asarray(start_music)) / 100
@@ -435,7 +435,7 @@ class LabriSMN(Analyzer):
         self.add_result(music_result)
 
 
-# Generate Grapher for Labri Speech/Music/Noise detection 
+# Generate Grapher for Labri Speech/Music/Noise detection
 from timeside.core.grapher import DisplayAnalyzer
 
 # Labri Speech/Music/Noise --> Speech
@@ -447,7 +447,7 @@ DisplayLABRI_PMB = DisplayAnalyzer.create(
     grapher_name='Labri Speech Detection',
     background='waveform',
     staging=False)
-    
+
 # Labri Speech/Music/Noise --> Music
 DisplayLABRI_PMB = DisplayAnalyzer.create(
     analyzer=LabriSMN,
@@ -457,4 +457,4 @@ DisplayLABRI_PMB = DisplayAnalyzer.create(
     grapher_name='Labri Music Detection',
     background='waveform',
     staging=False)
-    
+

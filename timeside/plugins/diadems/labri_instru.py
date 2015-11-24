@@ -19,7 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with TimeSide.  If not, see <http://www.gnu.org/licenses/>.
 
-# Author: D Fourer <dominique@fourer.fr> http://www.fourer.fr
+# Authors:
+#  Dominique Fourer <dominique@fourer.fr> http://www.fourer.fr
+#  Thomas Fillon <thomas@parisson.com>
 
 from timeside.core import Processor, implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
@@ -27,11 +29,13 @@ import numpy as np
 import scipy
 from timeside.core.preprocessors import frames_adapter, downmix_to_mono
 import timeside
-## plugin specific
-import sys, os
+import sys
+import os
+
 from timeside.plugins.diadems.labri import timbre_descriptor
 from timeside.plugins.diadems.labri import my_tools as mt
 from timeside.plugins.diadems.labri import my_lda
+
 
 class LABRIInstru(Analyzer):
     implements(IAnalyzer)
@@ -57,14 +61,26 @@ class LABRIInstru(Analyzer):
         self.T_NOISE = -60      ## noise threshold in dB
 
         self.signal = np.array([],float)
-        self.processed = False
+
         self.param_val = 0
         self.field_name = 0
         self.cur_pos = 0
         self.famille = ""
         self.jeu = ""
 
-        self.parents['signal'] = timeside.core.get_processor('waveform_analyzer')() 
+        self.label_1 = []
+        self.confidence_1 = []
+        self.label_2 = []
+        self.confidence_2 = []
+    
+    @interfacedoc
+    def setup(self, channels=None, samplerate=None, blocksize=None,
+              totalframes=None):
+        super(LABRIInstru, self).setup(channels, samplerate, blocksize, totalframes)
+        blocksize_s = 5   # Blocksize duration in seconds
+        stepsize_s = 2.5  # Stepsize in seconds
+        self.input_blocksize = int(blocksize_s * self.input_samplerate)
+        self.input_stepsize = int(stepsize_s * self.input_samplerate)
 
     @staticmethod
     @interfacedoc
@@ -81,33 +97,32 @@ class LABRIInstru(Analyzer):
     def unit():
         # return the unit of the data dB, St, ...
         return "Instrument name / index"
-
+    
+    @frames_adapter
+    @downmix_to_mono
     def process(self, frames, eod=False):
-        return frames, eod
-
-    def post_process(self):
-        #N = len(frames)
-        #self.cur_pos += N
-        #time = (self.cur_pos - N/2.)/ self.input_samplerate    #current time
-
-        N = len(self.parents['signal'].results['waveform_analyzer'].data)
-        N = min(N, 10 * self.input_samplerate)
-        self.signal = self.parents['signal'].results['waveform_analyzer'].data[0:N].sum(axis=1)
-        
-
+        self.signal = frames
         desc = timbre_descriptor.compute_all_descriptor(self.signal, self.input_samplerate)
         param_val, self.field_name = timbre_descriptor.temporalmodeling(desc)
         self.param_val = np.array([param_val[self.i_fs],])
         
-        ## estimate instrument family
+        # Estimate instrument family
         gr1, gr2, p1, p2 = my_lda.pred_lda(np.real(self.param_val)+mt.EPS, self.Vect, self.repr_mu, self.repr_sigma)
-        print  gr1, gr2, p1, p2
-        i_res = gr1[0]  ## use euclidean distance criterion as default
+        #print  gr1, gr2, p1, p2
+        self.label_1.append(gr1[0])  ## use euclidean distance criterion as default
+        self.confidence_1.append(p1[0])
+        self.label_2.append(gr2[0])
+        self.confidence_2.append(p2[0])
+        print gr1[0], gr2[0]
+        #self.famille = self.inst[i_res][0][0]
+        #self.jeu    = ""
+        #if i_res > 0:
+        #    self.jeu = self.inst[i_res][1][0]
+        
+        return frames, eod
 
-        self.famille = self.inst[i_res][0][0]
-        self.jeu    = ""
-        if i_res > 0:
-            self.jeu = self.inst[i_res][1][0]
+    def post_process(self):
+        print '----- post process -------'
         label = {0: u'aerophone',
                  1: u'struck cordophone',
                  2: u'plucked chordophone',
@@ -122,27 +137,34 @@ class LABRIInstru(Analyzer):
         #self.result_param = np.array([gr1, gr2, p1, p2])
         #self.result_data = self.famille + " - " + self.jeu
         #print self.result_param
-        print self.famille
-        print repr(self.jeu)
-        print label[i_res]
-        res1 = self.new_result(data_mode='label', time_mode='global')
-        res1.id_metadata.id += '.' + 'label'
-        res1.id_metadata.name += ' ' + 'Label'
-        res1.data_object.label = i_res
-        res1.data_object.label_metadata.label = label
-        self.add_result(res1)
+        #print self.famille
+        #print repr(self.jeu)
+        #print label[i_res]
+        res_label_1 = self.new_result(data_mode='label', time_mode='framewise')
+        res_label_1.id_metadata.id += '.' + 'label_1'
+        res_label_1.id_metadata.name += ' ' + 'Label methode 1'
+        res_label_1.data_object.label = self.label_1
+        res_label_1.data_object.label_metadata.label = label
+        self.add_result(res_label_1)
 
-        res2    = self.new_result(data_mode='value', time_mode='global')
-        res2.id_metadata.id  += '.' + 'confidence'
-        res2.id_metadata.name  += ' ' + 'Confidence'
-        #res2.data_object.value   = np.array([gr1, gr2]) ## instrument index
-        #res2.data_object.y_value = np.array([p1, p2])   ## confidence value
-        res2.data_object.value = p1[0]
-        self.add_result(res2)   ##store results as numeric in correct format ??
+        res_confidence_1 = self.new_result(data_mode='value', time_mode='framewise')
+        res_confidence_1.id_metadata.id += '.' + 'confidence_1'
+        res_confidence_1.id_metadata.name += ' ' + 'Confidence methode 1'
+        res_confidence_1.data_object.value = self.confidence_1
+        self.add_result(res_confidence_1)
 
+        res_label_2 = self.new_result(data_mode='label', time_mode='framewise')
+        res_label_2.id_metadata.id += '.' + 'label_2'
+        res_label_2.id_metadata.name += ' ' + 'Label methode 2'
+        res_label_2.data_object.label = self.label_2
+        res_label_2.data_object.label_metadata.label = label
+        self.add_result(res_label_2)
 
-
-
+        res_confidence_2 = self.new_result(data_mode='value', time_mode='framewise')
+        res_confidence_2.id_metadata.id += '.' + 'confidence_2'
+        res_confidence_2.id_metadata.name += ' ' + 'Confidence methode 2'
+        res_confidence_2.data_object.value = self.confidence_2
+        self.add_result(res_confidence_2)
         
 # Generate Grapher for Limsi SAD analyzer
 from timeside.core.grapher import DisplayAnalyzer
@@ -151,8 +173,8 @@ from timeside.core.grapher import DisplayAnalyzer
 DisplayLABRIInstru = DisplayAnalyzer.create(
     analyzer=LABRIInstru,
     analyzer_parameters={},
-    result_id='labri_instru.label',
-    grapher_id='grapher_labri_instru_label',
+    result_id='labri_instru.label_1',
+    grapher_id='grapher_labri_instru_label_1',
     grapher_name='Instrument classification',
     background='waveform',
     staging=False)

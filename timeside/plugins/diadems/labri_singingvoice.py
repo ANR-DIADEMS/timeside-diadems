@@ -26,7 +26,6 @@ from __future__ import division
 
 from timeside.core import implements, interfacedoc, get_processor, _WITH_AUBIO, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
-import timeside
 
 import numpy as np 
 import pickle
@@ -34,7 +33,7 @@ import os.path
 
 # Require Aubio
 if not _WITH_AUBIO:
-    raise ImportError('Aubio librairy is missing')
+    raise ImportError('aubio librairy is missing')
 # Require Yaafe
 if not _WITH_YAAFE:
     raise ImportError('yaafelib is missing')

@@ -274,7 +274,7 @@ DisplayLIMSI_SAD_etape = DisplayAnalyzer.create(
     analyzer_parameters={'sad_model': 'etape'},
     result_id='limsi_sad.sad_segments',
     grapher_id='grapher_limsi_sad_etape',
-    grapher_name='Speech activity (ETAPE)',
+    grapher_name='Speech activity - ETAPE',
     background='waveform',
     staging=False)
 
@@ -284,6 +284,6 @@ DisplayLIMSI_SAD_maya = DisplayAnalyzer.create(
     analyzer_parameters={'sad_model': 'maya'},
     result_id='limsi_sad.sad_segments',
     grapher_id='grapher_limsi_sad_maya',
-    grapher_name='Speech activity (Mayan)',
+    grapher_name='Speech activity - Mayan',
     background='waveform',
     staging=False)

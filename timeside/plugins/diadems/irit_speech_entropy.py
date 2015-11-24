@@ -108,3 +108,16 @@ class IRITSpeechEntropy(Analyzer):
         self.add_result(segs)
 
         return
+
+
+    
+# Generate Grapher for IRITSpeechEntropy analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+DisplayEntropySpeechSegmentation = DisplayAnalyzer.create(
+    analyzer=IRITSpeechEntropy,
+    result_id='irit_speech_entropy.segments',
+    grapher_id='grapher_irit_speech_entropy_segments',
+    grapher_name='Speech activity - Entropy',
+    background='waveform',
+    staging=False)

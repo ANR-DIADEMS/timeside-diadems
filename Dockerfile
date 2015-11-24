@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM parisson/timeside:latest-dev
+FROM timeside:latest-dev
 
 MAINTAINER Guillaume Pellerin <yomguy@parisson.com>, Thomas fillon <thomas@parisson.com>
 
@@ -25,8 +25,7 @@ WORKDIR /opt/TimeSide-Diadems
 ADD conda-requirements.txt /opt/TimeSide-Diadems/
 #ADD requirements.txt /opt/TimeSide-Diadems/
 
-RUN conda install --file conda-requirements.txt
-RUN conda install -c thomasfillon labri_multipitch
+RUN conda install  -c thomasfillon --file conda-requirements.txt
 
 # Install remaining depencies with pip
 # RUN pip install -r requirements.txt
