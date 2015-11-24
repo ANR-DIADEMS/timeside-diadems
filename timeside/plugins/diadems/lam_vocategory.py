@@ -152,7 +152,7 @@ class LAMVocategory(Analyzer):
 		# Size of FFT computing including zeropadding
     step2_sec=0.05 
 		# sec , must be >0
-                # determines grain of note duration vector
+                # determines grain of duration vector of partials
                 # computed in sec because fs is not known yet, and in order to be independant from fs which can be different from one audio file to another
     
     ## Parameters to detect number and duration of partials
@@ -253,7 +253,7 @@ class LAMVocategory(Analyzer):
     temp4=temp3*(fmax-fmin)/(LPxxss-1)+(LPxxss*fmin-fmax)/(LPxxss-1)  
                 # (fmin, ... fmax) with LPxxss elements (through a linear function)
     vectlog2=12*np.log2(temp4/fmin)               
-                 # moving to a semitone scale with fmin/2 as  reference
+                # moving to a semitone scale with fmin/2 as  reference
     NperOct =  int( LPxxss/(2**Noctaves-1)      )  
                 #  Number of elements of Pxx_ssmat in the first octave, to be taken as reference (as it limits the other octaves)lui qui limite les autres)
                 # approximation : moving to inferior integer 
@@ -267,33 +267,35 @@ class LAMVocategory(Analyzer):
     Lspectro=len(Pxx_st[0,:])
     for kk in range(Lspectro):              # Interpolation on frequency dimension, over each time bin
         Pxx_st[:,kk] = sp.interpolate.interp1d(vectlog2,Pxx_ssmat[:,kk], kind='slinear')(new_vectlog2)
-        # https://docs.scipy.org/doc/scipy-0.10.1/reference/generated/scipy.interpolate.interp1d.html
-        # Pxx_ssmat[:,kk] has its elements accordingly to frequency vector ‘vectlog2’
-        # and we want to interpolate Pxx_ssmat[:,kk] in order to get a new vector,   Pxx_st[:,kk] , whose elements feats with a frequency vector for which values are uniformely spead (constant sample period), contrary to Pxx_ssmat[:,kk]]
+        	# https://docs.scipy.org/doc/scipy-0.10.1/reference/generated/scipy.interpolate.interp1d.html
+        	# Pxx_ssmat[:,kk] has its elements accordingly to frequency vector ‘vectlog2’
+        	# and we want to interpolate Pxx_ssmat[:,kk] in order to get a new vector,   Pxx_st[:,kk] , whose elements feats with a frequency vector for which values are uniformely spead (constant sample period), contrary to Pxx_ssmat[:,kk]]
     
     
     
         ## Accumulation by octave
     chromagram=np.zeros((NperOct,Pxx_st.shape[1])) # Matrix with matrice avec une octave en fréquence de LPxxss/Noctaves points
-    for NumOct in range(1,Noctaves+1): #(de 1 à Noctaves compris) = on se balade sur chaque octave de la n°1 à Noctaves compris
-        chromagram = chromagram + Pxx_st[np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)):np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)) + NperOct,: ] # On cumule chaque octave les unes sur les autres     
-    chromagram=chromagram/Noctaves # normalisation par le nombre d'octave après les avoir cumulé.    
+    for NumOct in range(1,Noctaves+1): 
+		# (from 1 to Noctaves included)
+        chromagram = chromagram + Pxx_st[np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)):np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)) + NperOct,: ] 
+		# Each octave is cumulated
+    chromagram=chromagram/Noctaves 
+		# normalisation by octave number, after being cumulated
     
     spectrotop=chromagram.copy()     
           
     
     
-    ## Computing note length distribution
-    print '*** Computing Note length distribution...'       
+    ## Computing length distribution of partials
+    print '*** Computing length distribution o…’f partials       
                 
     seuilBruitFond=np.mean(Pxx_st)*coeffSeuilBruitFond
-        # Seuil minimal sur bruit de fond
+	        # Minimal threshold on background noise
     Pxx_st_sansPied_temp=np.zeros_like(Pxx_st)        
     LargeurPic2 = 3 
-                # ( 4/Nzeropad * Nzeropad/2 = 2 pour la largeur du lobe principal de Hann, 6/Nzeropad --> 3 pour inclure les 2 lobes secondaires)
+                # ( 4/Nzeropad * Nzeropad/2 = 2 for the width of the main lobe of the Hann window, 6/Nzeropad --> 3 if the 2 secondary lobes are included)
                 # cover the expected width of peaks of interest 
-                # la largeur de détection de pic correspond à 1 demi-ton
-                # 4/N correspondant à la largeur fréquentielle du premier lobe d'une fenetre de haming (axe fréquentielle normalisé)
+                # detection width corresponds to 1 semitone
     #LargeurPic2_v= np.ones( Lspectro )*LargeurPic2              
     
     for kkk in range(len(Pxx_st_sansPied_temp[0,:])):
@@ -302,68 +304,68 @@ class LAMVocategory(Analyzer):
         pipicIndex= peakutils.indexes(Pxx_st[:,kkk],thres=seuilNRJ,min_dist=LargeurPic2)
         
         for kk in range(len(pipicIndex)):
-            if Pxx_st[pipicIndex[kk],kkk]>  seuilNRJ: # c'est lui qui enlève tous les petits pic, et non pas le paramètre "thres" de la fonction peakutils
+            if Pxx_st[pipicIndex[kk],kkk]>  seuilNRJ: 
+		# it removes all the small peaks (but it is not the ‘thres’ parameter of the peakutils function)
                 Pxx_st_sansPied_temp[pipicIndex[kk],kkk]=   Pxx_st[pipicIndex[kk],kkk]
     
     del pipicIndex
     
     Pxx_st_sansPied2=scipy.ndimage.binary_closing(Pxx_st_sansPied_temp,structure=np.ones((1,3)) ).astype(np.int)#,iterations=2)
-                    # permet d'enlever les trous  de dimension de la structure
-    Pxx_st_sansPied = scipy.ndimage.binary_opening(Pxx_st_sansPied2,structure=np.ones((1,3)) ).astype(Pxx_st_sansPied2.dtype)   #,structure=np.ones((1,len(Pxx_st_sansPied[0,:]) ) ).astype(Pxx_st_sansPied.dtype))
-                    # permet d'enlever les  creux de dimension de la structure
+    Pxx_st_sansPied = scipy.ndimage.binary_opening(Pxx_st_sansPied2,structure=np.ones((1,3)) ).astype(Pxx_st_sansPied2.dtype) # ,structure=np.ones((1,len(Pxx_st_sansPied[0,:]) ) ).astype(Pxx_st_sansPied.dtype))
+                # allow to remove all the holes and small spots of the structure dimension
     
                       
     ## Distribution of the duration of partials (in sample) in the space pitch-time
-    #print '   ... Note duration distribution in pitch-time space'
+    #print '   ... Duration distribution of partials in pitch-time space'
     LongueurNotesEspace=np.zeros_like(Pxx_st_sansPied)
     #LongueurNotesEspace=np.ones_like(Pxx_st_sansPied)*np.min(Pxx_st_sansPied[0,:])
      
     # 2 parameters :
     note_seuilNRJ = 0 
-                # Energie min pour qu'on considère qu'on est sur la même note (à caractériser, peut être que ça fait une redondance avec seuilSpectro) 
+                # Min energie to consider that the partial is the same (to be characterized, maybe it is redundant with seuilSpectro) 
     note_delta = int(np.ceil( len(Pxx_st_sansPied[:,0]) *note_STdelta /(12*Noctaves) )) 
-                # en échantillon de l'axe Y du pitch 
+                # in number of samples of the pitch Y axis
     #print '      Note_delta = +/-  '  +str(note_delta)+' samples =  %.2e'  %(note_delta*12*Noctaves/ len(Pxx_st_sansPied[:,0]))+'  ST'
     
         
     for kk in range( len(LongueurNotesEspace[:,0]) - note_delta): 
-            # pour chaque ligne fréquentiel (on s'arrete à end-note_STdelta pour ne pas sortir de l'index max de la matrice ci-dessous)
-        if kk%100==0:  # affichage de l'avancée, pour patienter ...
+            	# for each frequency bin  (it is stopped at end-note_STdelta in order not to go out from the max index of the below matrix)
+        if kk%100==0:  # just for displying on terminal
             if kk==0:
-                print  '   ... Detecting notes (a. u.): ', str(int(kk/100)),'/',str(int((len(LongueurNotesEspace[:,0]) - note_delta)/100))# affichage tous les 100 itérations
+                print  '   ... Detecting partials (a. u.): ', str(int(kk/100)),'/',str(int((len(LongueurNotesEspace[:,0]) - note_delta)/100))
+		# affichage tous les 100 itérations
             else:
-                print  '                                                  ', str(int(kk/100)),'/',str(int((len(LongueurNotesEspace[:,0]) - note_delta)/100))# affichage tous les 100 itérations
+                print  '                                                  ', str(int(kk/100)),'/',str(int((len(LongueurNotesEspace[:,0]) - note_delta)/100))
+		# displaying every 100 iterations
 
-        dureeNote=0 # en échantillon
-        for kkk in range(len(LongueurNotesEspace[0,:])): # chaque échantillon temporel
+        dureeNote=0 
+		# in number of samples
+        for kkk in range(len(LongueurNotesEspace[0,:])): # for each temporal sample
              
             kkdelt=-note_delta
             NRJcondition=0
             while NRJcondition==0 and kkdelt<=note_delta: 
-                    # si condition d'énergie remplie sur la bande fréquentielle considéré est remlie, on sort de la boucle
-                if kk+kkdelt>=0: # pour éviter d'avoir des indices négatifs
-                    if Pxx_st_sansPied[kk+kkdelt,kkk]>note_seuilNRJ : # si énergie suffisante dans +/- intervalle fréquentiel note_STdelta
+                    # if energy condition is fulfilled, loop is finished
+                if kk+kkdelt>=0: # to avoid negative index
+                    if Pxx_st_sansPied[kk+kkdelt,kkk]>note_seuilNRJ : # if energy sufficiently great in +/- the frequency interval note_STdelta
                         NRJcondition=1
-                        #print 'energyon'
                 kkdelt=kkdelt+1
             if NRJcondition==1 and kkk != len(LongueurNotesEspace[0,:])-1 :
                 if dureeNote<dureeNoteLim:
-                        # durée limite à partir de laquelle on ne prend plus en compte les notes (permet une uniformisation entre les différents fichiers audio pour avoir un vecteur de duree de note de même longueur quelque soit le fichier audio)
-                    dureeNote=dureeNote+1 # on compte le nombre d'échantillon correspond à la longueur de la note
-                    #print dureeNote
-                    #print kkk
-            elif NRJcondition==1 and kkk == len(LongueurNotesEspace[0,:])-1 : #on est sur la fin d'une note siué dans la dernière case temporelle
+                        # max duration from which notes are not taken into account anymore (allows uniformisation between the different audio files to have a note duration vector of same length whatever the audio file)
+                    dureeNote=dureeNote+1 
+			# number of samples is counted, corresponding to the partial duration
+            elif NRJcondition==1 and kkk == len(LongueurNotesEspace[0,:])-1 : # it means that we are on the end of a partial located in the last temporal element
                 if dureeNote<dureeNoteLim:
-                        # durée limite à partir de laquelle on ne prend plus en compte les notes (permet une uniformisation entre les différents fichiers audio pour avoir un vecteur de duree de note de même longueur quelque soit le fichier audio)
-                        dureeNote=dureeNote+1 # on compte le nombre d'échantillon correspond à la longueur de la note
+                        # max duration from which notes are not taken into account anymore (allows uniformisation between the different audio files to have a duration vector of parital of same length whatever the audio file)
+                        dureeNote=dureeNote+1 
+			# number of samples is counted, corresponding to the partial duration
                 LongueurNotesEspace[kk,kkk-dureeNote+1]=dureeNote
-                    #print '   ... Detection of a note of  '+str(dureeNote)+' tenth of sec (if 1 sample =0.1sec )'
-                    #print kk, kkk
-            else: # pas assez d'énergie pour ce qu'on considère comme une note
-                if dureeNote!=0: #  i.e. on n'est pas sur un silence, mais sur la fin de la note
+                    	#print '   ... Detection of a partial of  '+str(dureeNote)+' tenth of sec (if 1 sample =0.1sec )'
+            else: # energy not great enough to be considered as a partial
+                if dureeNote!=0: #  i.e. not a silence but at the partial end
                     LongueurNotesEspace[kk,kkk-dureeNote]=dureeNote
-                    #print '   ... Detection of a note of  '+str(dureeNote)+' tenth of sec (if 1 sample =0.1sec )'
-                    #print kk, kkk
+                    #print '   ... Detection of a partial of  '+str(dureeNote)+' tenth of sec (if 1 sample =0.1sec )'
                 dureeNote=0
     
      
@@ -376,74 +378,73 @@ class LAMVocategory(Analyzer):
     # LargeurPic=len(LongueurNotesEspace[0,:])/12 # cover the expected width of peaks of interest. len/12 = 1 ST
     #LargeurPic_v= np.ones(len(chromaSpectrum))*LargeurPic  
     
-    LregroupFreq=1000*note_delta # 2*note_delta
+    LregroupFreq=1000*note_delta 
+		# 2*note_delta
+		# 1000*note_delta : very great
     sautAutorise=np.rint(sautAutorise_st*NperOct/12)
+		# Allowed jump
     
-    for kkk in range(len(LongueurNotesEspace[0,:])): # Pour chaque tranche temporelle
+    for kkk in range(len(LongueurNotesEspace[0,:])): # for each temporal bin
         jacki=1
         kk=0
         noteCenter_m=[]
         
-        if kkk%1000==0:  # affichage de l'avancée, pour patienter ...
+        if kkk%1000==0:  # just to wait patiently :)
             if kkk==0:
                 print  '   ... Grouping note process n°1  (a. u.): ', str(int(kkk/1000)),'/',str(int(len(LongueurNotesEspace[0,:])/1000))# affichage tous les 100 itérations
             else:
-                print  '                                                                     ', str(int(kkk/1000)),'/',str(int(len(LongueurNotesEspace[0,:])/1000))# affichage tous les 100 itérations
+                print  '                                                                     ', str(int(kkk/1000)),'/',str(int(len(LongueurNotesEspace[0,:])/1000))
+		# displaying every 100 iterations
 
     
         while jacki==1:                
-            if LongueurNotesEspace[kk,kkk]!=0 : # Si il existe un nombre de note non nul à la fréquence kk
-                haha=0 # mesure incrémentiel de la largeur fréquentielle du paté de notes
+            if LongueurNotesEspace[kk,kkk]!=0 : # if it exist a non-zero number of  partials at frequency kk
+                haha=0 
+			# incremental measure of frequency width of the grouped partials
                 LongueurNotes_regroup =[]
                 saut=0
                 
                 while saut<=sautAutorise and kk+haha < len(LongueurNotesEspace[:,kkk])-1 and haha<=LregroupFreq:
-                        # tandis qu'on a une densité de note adjacente non nulle (au  nom nombre de saut autisé près) ET qu'on sort pas du vecteur ET que la largeur du  paté fréquentiel n'excede pas note_delta 
-                    # Cas où le regroupement des notes débutant au même moment se fait comme la position du max de la longueur, avec les indices correspondants
-                    
-                    LongueurNotes_regroup.append((LongueurNotesEspace[kk+haha,kkk],kk+haha)) # regroupe les longeuurs de notes  des notes regroupés
+                        # while non-zero density of adjacent partials (modulo the allowed jump)) AND we don’t go out of the vector size AND width of jump is not greater than the allowed jump                    
+                    LongueurNotes_regroup.append((LongueurNotesEspace[kk+haha,kkk],kk+haha)) 
+			# saving length of grouped partials
                     haha+=1                
                     if LongueurNotesEspace[kk+haha,kkk]==0:
                         saut=saut+1       
     
                 LongueurNotes_regroup2=np.asarray(LongueurNotes_regroup)
-                        # Cas où le regroupement des notes débutant au même moment se fait comme la position du max de la longueur, avec les indices correspondants
                 indicesRegr, = np.where(LongueurNotes_regroup2[:,0]== np.max( LongueurNotes_regroup2[:,0]  ))
-                    # récupère les/l' indices des/du max de la  première colonne 
                 indicesRegrUnik=   np.rint(np.mean(indicesRegr))
-                    # on prend l'indice central si il y avait plusieurs indices (correspondant à des indices de max multiples) 
+			# Get the index(es) first column maximum(s)
                 noteCenter_m.append(LongueurNotes_regroup2[indicesRegrUnik,1] )
-    
+                      	# middle index is taken if several indexes
                 kk=kk+haha 
                 del indicesRegr, indicesRegrUnik,LongueurNotes_regroup2                   
                 
             elif LongueurNotesEspace[kk,kkk]==0 :
-                #print kkk
                 kk+=1
-            #print kkk
             if kk==len(LongueurNotesEspace[:,kkk])-1:
                 jacki=0
     
         noteCenter_m_ar=np.asarray(noteCenter_m)
     
         for kk in range(len(noteCenter_m_ar)):
-            #print kkk
             LongueurNotesEspace2[np.floor(noteCenter_m_ar[kk]),kkk]=LongueurNotesEspace[np.floor(noteCenter_m_ar[kk]),kkk]
-                # On donne la valeur de LongueurNotesEspace à LongueurNotesEspace2 juste au pics détecté
+                # Value of LongueurNotesEspace is given to LongueurNotesEspace2 at the detected peak index
     
     del noteCenter_m_ar 
     
     
     #### Grouping of adjacent partials finishing together
-    LongueurNotesEspace3=np.zeros_like(LongueurNotesEspace) # espace des longueurs de notes marqué à la position de leurs fins
-    LongueurNotesEspace3bis=np.zeros_like(LongueurNotesEspace) # regroupement des notes
-    LongueurNotesEspace3ter=np.zeros_like(LongueurNotesEspace) # retour de l'espace des longueurs de notes marquées à la position de leur début
+    LongueurNotesEspace3=np.zeros_like(LongueurNotesEspace) # space of duration of partials, located in the matrix at their end position
+    LongueurNotesEspace3bis=np.zeros_like(LongueurNotesEspace) # grouping partials
+    LongueurNotesEspace3ter=np.zeros_like(LongueurNotesEspace) # back to the space of duration of partials, located in the matrix at their start position
     
     
-    ## On transforme l'espace des longueurs de notes avec la longueur indiquée à la position de son début en espace des longueurs de notes avec la longueur indiquée à la position de la fin de la note
-    for kk in range(len(LongueurNotesEspace[:,0])): # Pour chaque tranche fréq
+    ## space of duration of partials, located in the matrix at their start position —> space of duration of partials, located in the matrix at their end position
+    for kk in range(len(LongueurNotesEspace[:,0])): # For each frequency bin
  
-        if kk%100==0:  # affichage de l'avancée, pour patienter ...
+        if kk%100==0:  # just to wait patiently
             if kk==0:
                 print  '   ... Grouping note process n°2  (a. u.): ', str(int(kk/100)),'/',str(int(len(LongueurNotesEspace[:,0])/100))# affichage tous les 100 itérations
             else:
@@ -453,13 +454,13 @@ class LAMVocategory(Analyzer):
             if kkk+LongueurNotesEspace2[kk,kkk]-1< len(LongueurNotesEspace3[0,:]) and LongueurNotesEspace2[kk,kkk] != 0 :
                 LongueurNotesEspace3[kk,kkk+LongueurNotesEspace2[kk,kkk]-1]=LongueurNotesEspace2[kk,kkk]
                 
-    ## on applique le même regroupement que précédemment avec l'espace des longuers de notes à partir de leur début :
-    for kkk in range(len(LongueurNotesEspace[0,:])): # Pour chaque tranche temporelle
+    ## Grouping partials as above, but on this new space (with partial located at their end position):
+    for kkk in range(len(LongueurNotesEspace[0,:])): # for each temporal bin
         jacki=1
         kk=0
         noteCenter_m=[]
     
-        if kkk%1000==0:  # affichage de l'avancée, pour patienter ...
+        if kkk%1000==0: # just to wait patiently
             if kkk==0:
                 print  '   ... Grouping note process n°3  (a. u.): ', str(int(kkk/1000)),'/',str(int(len(LongueurNotesEspace[0,:])/1000))# affichage tous les 100 itérations
             else:
@@ -468,25 +469,26 @@ class LAMVocategory(Analyzer):
     
         
         while jacki==1:                
-            if LongueurNotesEspace3[kk,kkk]!=0 : # Si il existe un nombre de note non nul à la fréquence kk
-                haha=0 # mesure incrémentiel de la largeur fréquentielle du paté de notes
+            if LongueurNotesEspace3[kk,kkk]!=0 : # if it exist a non-zero number of  partials at frequency kk
+                haha=0 
+			# incremental measure of frequency width of the grouped partials
                 LongueurNotes_regroup =[]
                 saut=0
                 
                 while saut<=sautAutorise and kk+haha < len(LongueurNotesEspace3[:,kkk])-1 and haha<=LregroupFreq:
-                        # tandis qu'on a une densité de note adjacente non nulle (au  nom nombre de saut autisé près) ET qu'on sort pas du vecteur ET que la largeur du  paté fréquentiel n'excede pas note_delta 
-                    # Cas où le regroupement des notes débutant au même moment se fait comme la position du max de la longueur, avec les indices correspondants
-                    
-                    LongueurNotes_regroup.append((LongueurNotesEspace3[kk+haha,kkk],kk+haha)) # regroupe les longeuurs de notes  des notes regroupés
+                        # while non-zero density of adjacent partials (modulo the allowed jump)) AND we don’t go out of the vector size AND width of jump is not greater than the allowed jump                             
+                    LongueurNotes_regroup.append((LongueurNotesEspace3[kk+haha,kkk],kk+haha))
+			# saving length of grouped partials
+
                     haha+=1                
                     if LongueurNotesEspace3[kk+haha,kkk]==0:
                         saut=saut+1
     
                 LongueurNotes_regroup2=np.asarray(LongueurNotes_regroup)
                 indicesRegr, = np.where(LongueurNotes_regroup2[:,0]== np.max( LongueurNotes_regroup2[:,0]  ))
-                    # récupère les/l' indices des/du max de la  première colonne 
+			# Get the index(es) first column maximum(s)
                 indicesRegrUnik=   np.rint(np.mean(indicesRegr))
-                    # on prend l'indice central si il y avait plusieurs indices (correspondant à des indices de max multiples) 
+                      	# middle index is taken if several indexes
                 noteCenter_m.append(LongueurNotes_regroup2[indicesRegrUnik,1] ) 
                 kk=kk+haha 
                 
@@ -501,14 +503,14 @@ class LAMVocategory(Analyzer):
     
         for kk in range(len(noteCenter_m_ar)):
             LongueurNotesEspace3bis[np.floor(noteCenter_m_ar[kk]),kkk]=LongueurNotesEspace3[np.floor(noteCenter_m_ar[kk]),kkk]
-                # On donne la valeur de LongueurNotesEspace à LongueurNotesEspace2 juste au pics détecté
+                # Value of LongueurNotesEspace3 is given to LongueurNotesEspace3bis at the detected peak index
     
     del noteCenter_m_ar
     
-    ## transformation dans l'autre sens : On transforme l'espace des longueurs de notes avec la longueur indiquée à la position de sa fin en espace des longueurs de notes avec la longueur indiquée à la position de début de la note
-    for kk in range(len(LongueurNotesEspace3bis[:,0])): # Pour chaque tranche fréq
+    ## Back to the space where partials are located by their end position in the matrix
+    for kk in range(len(LongueurNotesEspace3bis[:,0])): # for each freq bin
 
-        if kk%100==0:  # affichage de l'avancée, pour patienter ...
+        if kk%100==0:  # just to wait patiently
             if kk==0:
                 print  '   ... Grouping note process n°4  (a. u.): ', str(int(kk/100)),'/',str(int(len(LongueurNotesEspace[:,0])/100))# affichage tous les 100 itérations
             else:
@@ -522,7 +524,7 @@ class LAMVocategory(Analyzer):
     
     
     
-    ## Ménage
+    ## Cleaning
     if debug==0:
         del Pxx,  Pxx_ssmat
         del LongueurNotesEspace, LongueurNotesEspace2, LongueurNotesEspace3, LongueurNotesEspace3bis
@@ -533,17 +535,17 @@ class LAMVocategory(Analyzer):
         for kkk in range(Lspectro):
             margo=0
             kk=0
-            while margo==0 and kk<len(Pxx_st_sansPied[:,0])-1    : # Dès qu'on a une valeur > 0, on sort de la boucle et on ajoute 1 au compteur
+            while margo==0 and kk<len(Pxx_st_sansPied[:,0])-1    : # As sson as a value>0 is got, the loop is broken and 1 is added to the counter
                 if Pxx_st_sansPied[kk,kkk]>0:
                     margo=1
-                    ParUniDur+=1 # on compte la durée totale de la projection des partiels sur l'axe temporel
+                    ParUniDur+=1 # Total duration of the projection of the partials on the temporal axis
                 kk+=1
         print '       Note Partials take ', str(ParUniDur/Lspectro*100),' % of the audio file length'
                      
                      
                      
                      
-        # Initialisation pour stocker valeurs de certains descripteurs            
+        # Initialisation to save values of some descriptors
         partialDurationProp2=[]
         partialDurationProp3=[]
         partialDurationProp4=[]
@@ -581,10 +583,13 @@ class LAMVocategory(Analyzer):
         Pxx_st_ptibou = Pxx_st[:,  int( l*step_ech/step2 )   : int(  (l*step_ech+duree*fs)/step2 )   ]        
     
         ## Accumulation by octave
-        chromagram=np.zeros((NperOct,Pxx_st_ptibou.shape[1])) #matrice avec une octave en fréquence de LPxxss/Noctaves points
-        for NumOct in range(1,Noctaves+1): #(de 1 à Noctaves compris) = on se balade sur chaque octave de la n°1 à Noctaves compris
-            chromagram = chromagram + Pxx_st_ptibou[np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)):np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)) + NperOct,: ] # On cumule chaque octave les unes sur les autres     
-        chromagram=chromagram/Noctaves # normalisation par le nombre d'octave après les avoir cumulé.    
+        chromagram=np.zeros((NperOct,Pxx_st_ptibou.shape[1])) 
+			#matrix with an octave of LPxxss/Noctaves elements
+        for NumOct in range(1,Noctaves+1): # (from 1 to Noctaves included)
+            chromagram = chromagram + Pxx_st_ptibou[np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)):np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)) + NperOct,: ] 
+			# Octaves are cumulated
+        chromagram=chromagram/Noctaves 
+			# normalisation by number of octaves
         
         spectrotop=chromagram.copy()     
               
@@ -605,39 +610,40 @@ class LAMVocategory(Analyzer):
         ## Peak detection
         #print '*** Computing Peak detection ...'
          
-        #: critère sur énergie (au-dessus de genre 2 fois la valeur moyenne) ET au-dessus de 1/4 la valuer la plus haute
+        #: Energy criterion
         energieSeuil1=np.mean(chromaSpectrum)*1.5
         energieSeuil2=np.max(chromaSpectrum)*0.25  
           
         aie=np.zeros((100,3)) 
-                    # colonne 1= indice du début du pic (plus tard ce sera l'indice du centre du pic)
-                    # colonne 2 = largeur au critère du if
-                    # colonne 3 = amplitude centrale
+                    # colonne 1= index of peak start (!!! later this column will be the index of the peak centered index !!!)
+                    # colonne 2 = width
+                    # colonne 3 = central amplitude
         indice=-1
         picatchou=1
         for kk in range(len(chromaSpectrum)):
-            if chromaSpectrum[kk]>energieSeuil1 and chromaSpectrum[kk]>energieSeuil2: # Si critère du pic vérifié
-                if picatchou==1: # si nouveau pic (vrai la première fois du à initilisation)
+            if chromaSpectrum[kk]>energieSeuil1 and chromaSpectrum[kk]>energieSeuil2: # if condition is confirmed
+                if picatchou==1: # if new peak (true at the first loop)
                     indice=indice+1 
                     aie[indice,0]=kk
                     largeur=0
                     picatchou=0
-                largeur=largeur+1    # lrageur augmente de 1 à chaque fois que critères sur chromaSpectrum[kk] remli
+                largeur=largeur+1    
+				# width increase of 1 every time condition on chromaSpectrum[kk] is fulfilled
                 aie[indice,1]=largeur 
             else: 
                 picatchou=1 
-                            # pour que le prochain pic détecté soit considéré comme nouveau (sinon, c'est considéré comme même pic)
+                            	# in order that next peak is considered as a new peak
         
         Npeak.append(indice+1)
-            # Nombre de pics
+            # Number of peaks
         if len(aie[:indice+1,1])!=0:
             MeanPeakWidth.append(np.mean(aie[:indice+1,1]))
         else:
             MeanPeakWidth.append(np.NaN)
-                # Dans le cas où pas de pic détecté
+                # in case of no detected peak
         
                 
-        # calcul de l'indice du centre du pic et de son amplitude
+        # computing the index of peak center and its amplitude
         for kk in range( len(aie[:,0]) ) :
             aie[kk,0]=np.int( aie[kk,0]+aie[kk,1]/2 )
             aie[kk,2]=chromaSpectrum[aie[kk,0]]
@@ -649,66 +655,65 @@ class LAMVocategory(Analyzer):
         for kkk in range(Lspectro_ptibou):
             margo=0
             kk=0
-            while margo==0 and kk<len(Pxx_st_sansPied[:,0])-1    : # Dès qu'on a une valeur > 0, on sort de la boucle et on ajoute 1 au compteur
+            while margo==0 and kk<len(Pxx_st_sansPied[:,0])-1    : # As soon as a value>0 is got, the loop is broken and 1 is added to the counter
                 if Pxx_st_sansPied[kk,kkk+int( l*step_ech/step2 )]>0:
                     margo=1
-                    ParUniDur+=1 # on compte la durée totale de la projection des partiels sur l'axe temporel
+                    ParUniDur+=1 
+			# Total duration of the projection of the partials on the temporal axis
                 kk+=1                 
+
+
         
         ## Distribution of number of partials in the space pitch duration — with the grouping 
         NombreNotesEspace2 = np.zeros((len(LongueurNotesEspace_ptibou[:,0]),dureeNoteLim)) 
-            # nombre de ligne : nombre d'échantillon dans les 12 demi-tons
-            # nombre  de colonnes : valeur max de la duree des notes (on commence par une duréee non nulle et on finit par dureeNoteLim)
+            # Number of lines : number of samples in the 12 semitones
+            # Number of columns : max value of duration of partials
                  
-        for kk in range( len(LongueurNotesEspace_ptibou[:,0] )) :          # balade sur le pitch
-            for kkk in range(len(LongueurNotesEspace_ptibou[0,:])):        # balade sur le temps
-                if int(LongueurNotesEspace_ptibou[kk,kkk]) !=0:                 # i.e. n ne prend pas en compte les notes de durée nulle
+        for kk in range( len(LongueurNotesEspace_ptibou[:,0] )) :          # pitch
+            for kkk in range(len(LongueurNotesEspace_ptibou[0,:])):        # time
+                if int(LongueurNotesEspace_ptibou[kk,kkk]) !=0:                 # i.e. the zero-length partials are not taken into account
                     NombreNotesEspace2[kk, int(LongueurNotesEspace_ptibou[kk,kkk])-1 ]+=1
         
         
         
-        ## on applatit sur l'axe du pitch : vecteur sur les durées qui contient le nombre de note — avec le regroupement des notes
-        NombreNotesEspace_toupla2=np.zeros_like(NombreNotesEspace2[0,:])  # vecteur de longueur de la duree max des notes
-        for kk in range(len(NombreNotesEspace2[:,0])):                 # balade sur la durée des notes
+        ## Flattening on pitch axis
+        NombreNotesEspace_toupla2=np.zeros_like(NombreNotesEspace2[0,:])  # vector of length of max note duration
+        for kk in range(len(NombreNotesEspace2[:,0])):                 
             NombreNotesEspace_toupla2+=NombreNotesEspace2[kk,:]
         
         
 
         
         ## Normalisations
-        CumParDur=0 # en échantillon
+        CumParDur=0 # in sample
         for kk in range( len(NombreNotesEspace_toupla2)):
-            # calcul de l somme des durées des partiels
+            # computing sum of duration of partials
             CumParDur= CumParDur+NombreNotesEspace_toupla2[kk]*(kk+1)
             
         NoteDurationDistribution=    NombreNotesEspace_toupla2/CumParDur
-            # Normalisation par la somme des durées totale des partiels pour être indépendant de la 
+            # Normalisation by sum of total duration of partials
         
         
-        ## autres descirpteurs dérivés de la note duration distribution 
+        ## Other descriptos derived from duration distribution of partials
         CumParDur_nor=CumParDur/(duree/step2_sec)
-            # durée totale des notes normalisée par durée du fichier audio
-            # CumParDur en échantillon de step2_sec   
+            # total duration of partials, normalized by audio file length
+            # CumParDur in sample of step2_sec   
         MeanInstNoteNumb=CumParDur/ParUniDur
-            # Nombre moyen de partiel à chaque instant de non-silence
+            # Mean number of partials at each instant of non-silence
         VoicingProportion=ParUniDur/Lspectro_ptibou
-            # proporition de voisement sur le signal entier    
-             
-        # à rajouter ; durée mouenne de segment voisé et de segment non voisé   
-        
+            # Voicing proportion on the full audio signal
         
         
            
         
-        ##  Cacul de l'étendue des durées de note non nulle
+        ##  Computing the longuest partial
         kk=len(NombreNotesEspace_toupla2)-1
-        while NombreNotesEspace_toupla2[kk]==0 and kk >0: # on regarde à reculons quel est le premier élément qui ne vaut pas zéro
+        while NombreNotesEspace_toupla2[kk]==0 and kk >0: # we look for the first element which is not zero, (walking backward)
             kk=kk-1
-        NoteDurationRange.append((kk+1)*step2_sec) # ajoute l' Indice du dernier élément non nulle(en sec) et les regroupe dans un même fichier pour une même catégorie
+        NoteDurationRange.append((kk+1)*step2_sec) # adding the indew of last non-zero element (in sec) and grouping them for each category
         
         
-        ## Ecriture dans un fichier des valeurs des vecteurs du nombre de notes selon la durée, dans le format de Orange 
-        # On ajoute à un fichier texte une nouvelle ligne contennat le vecteur de nombre de notes par duréee de note, associé à la catégorie vocale
+        ## Writing in a filein the Orange format
         
         datetitle=str(datetime.datetime.now())[:10]+"-"+str(datetime.datetime.now())[11:13]+"h"
         dataFileName='./descriptorValues' +'_dureeMax='+str(duree)+ 'sec_'+ 'Nfft2='+str(int(Nfft2_sec*1000))+'ms_'+datetitle + '.tab'
@@ -730,8 +735,8 @@ class LAMVocategory(Analyzer):
         # 2e ligne
         file1.write('d\t') # i. e. discrete descriptor
         for kk in range(dureeNoteLim):
-            file1.write('c\t') # i.e. continuous desciptor (note duration)
-        file1.write('c\t') # i.e. continuous desciptor (note duration range)
+            file1.write('c\t') # i.e. continuous desciptor (duration of partials)
+        file1.write('c\t') # i.e. continuous desciptor (duration range of partial, i.e. longuest note)
         file1.write('c\t') # i.e. continuous desciptor (peak number)
         file1.write('c\t') # i.e. continuous desciptor (mean peak width)
         file1.write('c\t') # i.e. continuous desciptor (cumulated note duration)            
@@ -743,11 +748,11 @@ class LAMVocategory(Analyzer):
         file1.write('m\t') 
         for kk in range(dureeNoteLim):
             file1.write('\t')
-        file1.write('\t') # for the note duration range
+        file1.write('\t') # for the longuest partial
         file1.write('\t') # for the peak number
         file1.write('\t') # for the mean peak width
-        file1.write('\t') # for the normalized  cumulated note duration 
-        file1.write('\t') # for the mean instantaneous note number
+        file1.write('\t') # for the normalized  cumulated duration  of partials
+        file1.write('\t') # for the mean instantaneous number of partials
         file1.write('\t') # for the voicing proportion
         file1.write('c\t') # i.e. this column is a category   
         file1.write('m\t') # i.e. ignore this column (name of the database)                                               
@@ -755,37 +760,32 @@ class LAMVocategory(Analyzer):
             
             
         file1.write(figname+'\t') 
-            # 1ere colonne : nom du fichier
+            # 1st column : file name
         for kk in range(len(NombreNotesEspace_toupla2)):
             #print NombreNotesEspace_toupla[kk]
             file1.write('%0.3e\t' %(NoteDurationDistribution[kk]*(kk+1)*step2_sec)  )
-                # 2e à Xe colonne nombre des notes selon duree
-                # On multiplie les données par leur abscisse pour redresser la courbe
+                # 2nd to Xe column : number of partials for each duration
+                # multiplying duration by abscisse to correct the curve
         for kk in range(len(NombreNotesEspace_toupla2),dureeNoteLim,1):
-            # On remplit le reste de zero (là où il n'y a pas de note qui ont cette longueur
+            # Filling the rest with zeros
             file1.write('0\t')    
         
         file1.write('%0.2e\t' %NoteDurationRange[ii] )        
-             # On ajoute l'étendue des durées de note non nulle
+             # Adding longuest partial
         file1.write('%0.2e\t' %Npeak[ii] )        
-             # On ajoute le nombre de ppics
+             # Adding number of peaks
         file1.write('%0.2e\t' %MeanPeakWidth[ii])        
-             # On ajoute la largeur moyenne des pics
+             # Adding peak mean width
         file1.write('%0.2e\t' %CumParDur_nor )        
-             # On ajoute la durée cumulées des notes normalisées
-             # On ajoute la largeur moyenne des pics
+             # Adding … 
         file1.write('%0.2e\t' %MeanInstNoteNumb)        
-             # On ajoute le nombre moyen instantané de note    
+             # Adding …   
         file1.write('%0.2e\t'%VoicingProportion)
-            # ajout de la proportion de voisement
+            # Adding …
         
                  
         file1.write(""+'\t') 
-            # avant derniere colonne : label de base
-        #         if ii==0:
-        #             file1.write('coucou1')
-        #         else:
-        #             file1.write('coucou2')
+            # before last column : label
         file1.write("")     
              
         file1.write('\n')
@@ -794,7 +794,7 @@ class LAMVocategory(Analyzer):
         path = os.path.split(__file__)[0]
         models_dir = os.path.join(path, 'trained_models')
      
-        ## Classificaiton 2 classes
+        ## Classification into 2 classes
         learnedData_2c = os.path.join(models_dir, 'learnedData_descriptorValues_dureeMax=10sec_Nfft2=150ms_2015-07-02-16h_2classes.tab')
         dataLearned_2c = Orange.data.Table(learnedData_2c)
         dataTested = Orange.data.Table(dataFileName)
@@ -808,7 +808,7 @@ class LAMVocategory(Analyzer):
         resall_2c.append(res_2c)
                 # storing the probability values of each category of this time window
 
-        ## Classificaiton 5 classes    
+        ## Classification in 5 classes    
         learnedData_5c = os.path.join(models_dir, 'learnedData_descriptorValues_dureeMax=10sec_Nfft2=150ms_2015-07-02-16h_5classes.tab')
         dataLearned_5c = Orange.data.Table(learnedData_5c)
         dataTested = Orange.data.Table(dataFileName)
@@ -825,7 +825,7 @@ class LAMVocategory(Analyzer):
         resall_5c.append(res_5c)
                 # storing the probability values of each category of this time window
     
-        ## Classificaiton 6 classes    
+        ## Classification in 6 classes    
         learnedData_6c = os.path.join(models_dir, 'learnedData_descriptorValues_dureeMax=10sec_Nfft2=150ms_2015-07-02-16h_6classes.tab')
         dataLearned_6c = Orange.data.Table(learnedData_6c)
         dataTested = Orange.data.Table(dataFileName)
@@ -848,16 +848,16 @@ class LAMVocategory(Analyzer):
     
 
     
-        ## Stockage des valeurs de descripteurs intéressants
+        ## Saving values of most interesting descriptors
         partialDurationProp2.append( NoteDurationDistribution[2]*(2+1)*step2_sec)  
         partialDurationProp3.append( NoteDurationDistribution[3]*(3+1)*step2_sec) 
         partialDurationProp4.append( NoteDurationDistribution[4]*(4+1)*step2_sec) 
-                    # NoteDurationDistribution[0] et  NoteDurationDistribution[1] sont nulle à cause de la morphomath
+                    # NoteDurationDistribution[0] and  NoteDurationDistribution[1] are zero because of morpho-mathematical operation
         LonguestNote.append(NoteDurationRange[ii])
         MeanInstNoteNumb2.append(MeanInstNoteNumb) 
         SoundProportion.append(VoicingProportion*100) 
                     # (%)        
-        # Pour calculer nombre de partial
+        # Computing number of partials
         PartialNumber=0
         PartialDuration=[]
         for kk in range(len(NombreNotesEspace2[:,0])):
@@ -867,12 +867,12 @@ class LAMVocategory(Analyzer):
                     PartialDuration.append(NombreNotesEspace2[kk,kkk])
         PartialMeanDuration.append(np.mean(PartialDuration)*step2_sec)
         NoteFlow.append(  (PartialNumber /  MeanInstNoteNumb  )  / (VoicingProportion * Lspectro_ptibou  ))
-                    #Débit de note (en nombre /sec)  = (nombre partiels / densité)  / (proportion voisement * duree)
+                    #Note flow ( number / sec = (number of partials  / density)  / ( voicing proportion * duration)
         
         
         
     
-    ## Ménage
+    ## Cleaning
     if debug==0:
         del Pxx_st_sansPied, NombreNotesEspace_toupla2, Pxx_st
         del LongueurNotesEspace3ter
