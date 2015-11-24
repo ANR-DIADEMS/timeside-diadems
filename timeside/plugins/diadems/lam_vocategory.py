@@ -45,7 +45,7 @@ class LAMVocategory(Analyzer):
             list[3]: values of Proportion of 150ms-long partials (a. u.)
             list[4]: values of Proportion of 200ms-long partials (a. u.)
             ... Proportion of 250ms-long partials (a. u.)
-            ... Longuest partial (sec)
+            ... Longest partial (sec)
             ... Mean instantaneous number of partials
             ... Note proportion (%)
             ... Mean duration of partials (sec)
@@ -131,55 +131,63 @@ class LAMVocategory(Analyzer):
     
     figname_AvcExt = os.path.basename(nomFichier)
     figname= os.path.splitext(figname_AvcExt)[0]
-    #print "figname=", figname
-    
-    
-    
-    #----------------------   Not to be modified because the training data are computd with these values:
+
+
+
+    #----------------------   The following must not to be modified except if the training data is modified accordingly:
     
     ## Spectrogram & Chromagram parameters
     fmin=110 # Hz
     Noctaves=5 
     fmax=(2**Noctaves)*fmin
     coeffSeuilNRJ=1.5
-                 # coeff sur l'NRJ moyenne du spectro en dessous duquel on considère qu'on n'a rien d'intéressant pour la détection de partiel
+                 # threshold factor on spectrogram mean energy below which nothing is considered as interesting to detect partials
     coeffSeuilBruitFond=0.5 
-                # coeff sur l'NRJ moyenne du spectro en dessous duqeul on considère que c'est du bruit de fond (réglé empiquement)
-                # réglé pour Noctaves=5 octaves (si on prend plus d'octave, il faudrait lever cette limite car le mean du spectre sera plus bas, et inversement)
-    Nfft2_sec=0.15 #0.2 #sec
-                # plus petit que 0.15 noie les pics adjacents à cause de leur largeur
+                # threshold factor on spectrogram mean energy below which it is supposed to be background noise (empirically settled)
+                # Settled for Noctaves=5 octaves (if more octaves are considered, this limit should be increased because the spectrogram mean would be lower, and inversely)
+    Nfft2_sec=0.15
+		# Nfft in sec
+                # if lower than 0.15, adjacent peaks are in the noise because of their width
     Nzeropad=int(2048*8*2)
-    step2_sec=0.05 #sec , must be >0
-                #    va déterminer le grain du vecteur de durée de note
-                #    calculé en sec car on ne connait pas ici la fs, et façon à être indépendant de la fs qui peut changer selon les fichiers audio
+		# Size of FFT computing including zeropadding
+    step2_sec=0.05 
+		# sec , must be >0
+                # determines grain of note duration vector
+                # computed in sec because fs is not known yet, and in order to be independant from fs which can be different from one audio file to another
     
-    ## Paramètre pour la détection de nombre et de la durée des notes
+    ## Parameters to detect number and duration of partials
     dureeNoteLim=100
-                # nombre de durées différentes considérés (par pas de step2_sec et from 0)  (je ne le fais pas dépendre d'autres paramètres de façon qu'il soit constant d'une collection de sons à l'autre)
-                # ce sera la taille du vecteur de paramètres pour la catégorisation
-                # Exemples : Avec dureeNoteLim=100, et si chaque paramètre est calculé tous les 100ms (via step2), ça fait donc prendre en compte les notes de durée de 100ms à 10sec
-                #dureeNoteLim=int(10*fs/ step2)
-                # pour avoir un axe des durées de note aynt pour valeur maximale XX sec
-    note_STdelta = 0.35/2 # demi-ton (+/- cette valeur) ; demi-interval autour duquel on considère qu'on est dans la même note 
+                # number of distinct partial duration (by step of step2_sec and from 0) 
+                # it is also the size of the descriptor value vector for the classification
+                # Examples : If dureeNoteLim=100, and if step2_sec=100ms, then all the partial durations from 100ms to 10sec will be taken into consideration
+    note_STdelta = 0.35/2 
+		# semi-tone
+		# half interval around which it is considered as the same partial
     sautAutorise_st=0.5
-            # pour le regroupeemnt de notes
-            # nombre de demi-ton successives toléré pour considérer que 2 points au même instant t sont issus de la même note
-            # permet de regrouper des notes qui commencent ensemble et qui ne sont pas successifs d'un bin fréq mais jusqu'à "sautAutoride" bin
-            # si on veut aucun saut (que des bins adjacents fréquentiellement, on met 0
-    deb=0 # sec 
-    duree2=10 #sec # est diminué + bas si longueur du fichier audio est < duree
+            	# for the partial grouping
+            	# Number of succesive allowed int semitones in order that 2 temporal succesive points are from the same partial
+            	# Allows to group partials beginning together and separated of sautAutoride bin at maximum
+            	# Put 0 if no grouping wanted
+    deb=0 	
+		# sec 
+		# starting point in the audio file
+    duree2=10 	
+		# sec 
+		# wanted duration in the audio analysis
+		# this value is modified below if the total audio length is less than duree2
     
     #---------------------- 
     
     
     ## Modes
     debug=0
-                # si 0, supprime les valriables à chaque boucle fort pour gagner en mémoire
+                # if 0, clear some variables every loop to save memory
                 # si 1, ne supprime rien
     graphik=1
-            # 0: no probalitity graph is saved
-            # 1: probability graph is saved to a file 
-    fsleg=4 # taille des titres et labels
+            	# 0: no probalitity graph is saved
+            	# 1: probability graph is saved to a file 
+    fsleg=4 
+		# taille des titres et labels
     
     ## Specific to recolte.py
     resall_2c=[]
@@ -192,12 +200,12 @@ class LAMVocategory(Analyzer):
     
     audio2 = np.asarray(self.parents['waveform_analyzer'].results['waveform_analyzer'].data_object.value)
     audio_full=audio2[:,0]   # right channel
-    #audio=(audio2[:,0]+audio2[:,1])/2  # moyenne des 2 canaux
+    #audio=(audio2[:,0]+audio2[:,1])/2  # 2-channel mean
     fs=self.parents['waveform_analyzer'].results['waveform_analyzer'].data_object.frame_metadata.samplerate
     step_ech=self.step_sec*fs
     
     ## Initialization        
-    NoteDurationRange=[] # va contenir tous les étendues de durée de note pour une même catégorie
+    NoteDurationRange=[] # contains all the ranges of partial duration of a same category
     Npeak=[]
     MeanPeakWidth=[]  
     
@@ -213,13 +221,13 @@ class LAMVocategory(Analyzer):
             print 'Audio length = ',str(int(len(audio)/fs)),' sec'
             del audio_full
     NpartAudio=np.ceil( (len(audio)-duree*fs) /  step_ech   )
-            # on calcul l'algo toutes les 1sec du signal, sur une duréee de duree2    
+            # The algo is computed every step_ech samples of the signal, on a duration of “duree“ sec
             
     ii=-1  
     deb=0            
     
     
-    #### Chromafram
+    #### Chromagram
     print ('*** Computing Chromagram... fmin=%i Hz,  fmax=%i Hz (%i octaves)' %(fmin,fmax,Noctaves))
     #print("    Nfft pour chroma = %.2e sec" %Nfft2_sec)
     #print("    ZeroPad pour chroma = %.2e sec" %(Nzeropad/fs))
@@ -230,43 +238,43 @@ class LAMVocategory(Analyzer):
     
     Pxx, freqs, bins, im = pylab.specgram(audio,Fs=fs,window=np.hamming(Nfft2),NFFT=Nfft2,noverlap=Nfft2-step2,pad_to=Nzeropad,xextent=[deb,deb+duree])
     
-    # on récupère la partie fréquentielle qu'on veut étudier
-    Pxx_ssmat=Pxx[ fmin*Nzeropad/fs : fmax*Nzeropad/fs , : ].copy() # sous matrice du spectro correspondant en fréquence à fmin:fmax
+    # We extract the spectrogram frequency area we want to study
+    Pxx_ssmat=Pxx[ fmin*Nzeropad/fs : fmax*Nzeropad/fs , : ].copy() # Spectro submatrix corresponding to fmin:fmax
     
     
     
     ## from linear scale to log2 scale        
     LPxxss=len(Pxx_ssmat[:,0])      
-                # Nombre d'élément selon la dimension fréquence (correspondant aux fréq fmin à fmax) 
+                # Number of elements along the frequency dimension (corresponding to fmin to fmax)fmax) 
     vectlin=range(LPxxss)                 
-                # (0,2,...,LPxxss-1) avecLPxxss points
+                # (0,2,...,LPxxss-1) with LPxxss elements
     temp3=np.asarray(vectlin)+1                     
-                # (1,2,...,LPxxss) avec LPxxss points
+                # (1,2,...,LPxxss) with LPxxss elements
     temp4=temp3*(fmax-fmin)/(LPxxss-1)+(LPxxss*fmin-fmax)/(LPxxss-1)  
-                # (fmin, ... fmax) avec LPxxss points (par fonction affine)
+                # (fmin, ... fmax) with LPxxss elements (through a linear function)
     vectlog2=12*np.log2(temp4/fmin)               
-                 # passage en demi-ton avec pour référence fmin/2
+                 # moving to a semitone scale with fmin/2 as  reference
     NperOct =  int( LPxxss/(2**Noctaves-1)      )  
-                #  nombre d'élément de Pxx_ssmat dans la 1ere octave, qu'ont va prendre comme référence (car c'est lui qui limite les autres)
-                # approximation à l'enter inférieur !!
+                #  Number of elements of Pxx_ssmat in the first octave, to be taken as reference (as it limits the other octaves)lui qui limite les autres)
+                # approximation : moving to inferior integer 
     new_length =  int( Noctaves * LPxxss / (2**Noctaves-1)      )             
-                # Nouvelle longueur de l'élément qu'on veut en sortie d'interpolation ; Nombre d'octave * nombre d'élment de la premiere octave
-                # approxi à l'entier inférieur
+                # New length to be wanted in the interpolation outlet; Number of octaves * element number in the first octave
+                # approximation : moving to inferior integer 
     new_vectlog2 = np.linspace(vectlog2[0],vectlog2[-1], new_length)
-                # vecteur commen!ant et finissant par les mêmes valeurs que le vecteur en log2 vectlog2 et ayant pour dim new_length
+                # vector starting and finishing by the same values than the log2 vector “vectlog2“, and having “new_length“ as dimension
     Pxx_st=np.zeros((new_length, len(Pxx_ssmat[0,:])))
     
     Lspectro=len(Pxx_st[0,:])
-    for kk in range(Lspectro):              # Interpolation sur la dimension fréquentielle sur chacune des tranches temporelles
+    for kk in range(Lspectro):              # Interpolation on frequency dimension, over each time bin
         Pxx_st[:,kk] = sp.interpolate.interp1d(vectlog2,Pxx_ssmat[:,kk], kind='slinear')(new_vectlog2)
         # https://docs.scipy.org/doc/scipy-0.10.1/reference/generated/scipy.interpolate.interp1d.html
-        # Pxx_ssmat[:,kk] a ses éléments en concodance avec le vecteur fréquentielle vectlog2
-        # et on veut interpoler Pxx_ssmat[:,kk] de façon à avoir un nouveau vecteur ,   Pxx_st[:,kk] , dont les éléments sont en correspondnace avec un vecteur fréquentiel dont les valeurs sont uniformément réparti (intervalle constant), contrairement à Pxx_ssmat[:,kk]]
+        # Pxx_ssmat[:,kk] has its elements accordingly to frequency vector ‘vectlog2’
+        # and we want to interpolate Pxx_ssmat[:,kk] in order to get a new vector,   Pxx_st[:,kk] , whose elements feats with a frequency vector for which values are uniformely spead (constant sample period), contrary to Pxx_ssmat[:,kk]]
     
     
     
         ## Accumulation by octave
-    chromagram=np.zeros((NperOct,Pxx_st.shape[1])) #matrice avec une octave en fréquence de LPxxss/Noctaves points
+    chromagram=np.zeros((NperOct,Pxx_st.shape[1])) # Matrix with matrice avec une octave en fréquence de LPxxss/Noctaves points
     for NumOct in range(1,Noctaves+1): #(de 1 à Noctaves compris) = on se balade sur chaque octave de la n°1 à Noctaves compris
         chromagram = chromagram + Pxx_st[np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)):np.floor((NumOct-1) * LPxxss / (2**Noctaves-1)) + NperOct,: ] # On cumule chaque octave les unes sur les autres     
     chromagram=chromagram/Noctaves # normalisation par le nombre d'octave après les avoir cumulé.    
