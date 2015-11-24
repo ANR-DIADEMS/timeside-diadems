@@ -80,12 +80,13 @@ class IRITMusicSLN(Analyzer):
 
         tLine = arange(w, end - w, self.wStep)
 
-        #  Les plus petits  ! <> article
-        segLen = [mean(diff(getBoundariesInInterval(t - w, t + w, segList)))
-                  for t in tLine]
+        segLen = [mean(diff(d)) for d in
+                  [[t - w] + getBoundariesInInterval(t - w, t + w, segList) + [t + w] for t in tLine]]
 
         # Confidence Index
         conf = [(s - self.threshold) / self.threshold if s < 2 * self.threshold else 1 for s in segLen]
+        from pylab import savefig, plot
+
 
         segLenRes = self.new_result(data_mode='value', time_mode='framewise')
         segLenRes.id_metadata.id += '.' + 'energy_confidence'
