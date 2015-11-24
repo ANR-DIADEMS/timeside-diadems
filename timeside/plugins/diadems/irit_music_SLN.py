@@ -98,7 +98,7 @@ class IRITMusicSLN(Analyzer):
         convert = {False: 0, True: 1}
         label = {0: 'nonMusic', 1: 'Music'}
 
-        segList = segmentFromValues([s < self.threshold for s in segLen])
+        segList = segmentFromValues([c > 0 for c in conf])
         # Hint : Median filtering could imrove smoothness of the result
         # from scipy.signal import medfilt
         # segList = segmentFromValues(medfilt(modEnergyValue > self.threshold, 31))

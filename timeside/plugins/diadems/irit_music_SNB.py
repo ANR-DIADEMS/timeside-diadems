@@ -79,8 +79,9 @@ class IRITMusicSNB(Analyzer):
                  for t in tLine]
 
         # Confidence Index
-        conf = [float(v - self.threshold) / float(self.threshold)
-                if v < 2 * self.threshold else 1.0 for v in segNB]
+        conf = [-float(v - self.threshold) / float(self.threshold)
+                if v < 2 * self.threshold else -1.0 for v in segNB]
+
         segLenRes = self.new_result(data_mode='value', time_mode='framewise')
         segLenRes.id_metadata.id += '.' + 'energy_confidence'
         segLenRes.id_metadata.name += ' ' + 'Energy Confidence'
