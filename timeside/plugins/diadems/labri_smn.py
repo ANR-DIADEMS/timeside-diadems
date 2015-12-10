@@ -277,40 +277,40 @@ class LabriSMN(Analyzer):
         gmmset = []
 
         model_list = [
-            '1___merged___jingle+speech.256.pkl',
-            '2___merged___applause+other+speech.256.pkl',
-            '3___merged___jingle+music+other.256.pkl',
-            '4___merged___advertising+other.256.pkl',
-            '5___merged___advertising+music+other.256.pkl',
-            '6___merged___multiple_speech2+music+speech.256.pkl',
-            '7___merged___acappella+music.256.pkl',
-            '8___merged___laugh+music+other+speech.256.pkl',
-            '9___merged___multiple_speech1+music+other+speech.256.pkl',
-            '10___merged___applause+other.256.pkl',
-            '11___merged___applause+music+other.256.pkl',
-            '12___merged___advertising+music+other+speech.256.pkl',
-            '13___merged___multiple_speech2+other+speech.256.pkl',
-            '14___merged___multiple_speech1+other+speech.256.pkl',
-            '15___merged___laugh+music+other.256.pkl',
-            '16___merged___advertising+other+speech.256.pkl',
-            '17___merged___advertising+music.256.pkl',
-            '18___merged___multiple_speech1+speech.256.pkl',
-            '19___merged___multiple_speech1+music+speech.256.pkl',
-            '20___merged___jingle+music+speech.256.pkl',
-            '21___merged___laugh+other+speech.256.pkl',
-            '22___merged___laugh+other.256.pkl',
-            '23___merged___multiple_speech2+speech.256.pkl',
-            '24___merged___advertising+speech.256.pkl',
-            '25___merged___jingle+music.256.pkl',
-            '26___merged___music+other+speech.256.pkl',
-            '27___merged___null.256.pkl',
-            '28___merged___advertising+music+speech.256.pkl',
-            '29___merged___music+other.256.pkl',
-            '30___merged___other.256.pkl',
-            '31___merged___other+speech.256.pkl',
-            '32___merged___music+speech.256.pkl',
-            '33___merged___speech.256.pkl',
-            '34___merged___music.256.pkl'
+            'jingle+speech.256.pkl',
+            'applause+other+speech.256.pkl',
+            'jingle+music+other.256.pkl',
+            'advertising+other.256.pkl',
+            'advertising+music+other.256.pkl',
+            'multiple_speech2+music+speech.256.pkl',
+            'acappella+music.256.pkl',
+            'laugh+music+other+speech.256.pkl',
+            'multiple_speech1+music+other+speech.256.pkl',
+            'applause+other.256.pkl',
+            'applause+music+other.256.pkl',
+            'advertising+music+other+speech.256.pkl',
+            'multiple_speech2+other+speech.256.pkl',
+            'multiple_speech1+other+speech.256.pkl',
+            'laugh+music+other.256.pkl',
+            'advertising+other+speech.256.pkl',
+            'advertising+music.256.pkl',
+            'multiple_speech1+speech.256.pkl',
+            'multiple_speech1+music+speech.256.pkl',
+            'jingle+music+speech.256.pkl',
+            'laugh+other+speech.256.pkl',
+            'laugh+other.256.pkl',
+            'multiple_speech2+speech.256.pkl',
+            'advertising+speech.256.pkl',
+            'jingle+music.256.pkl',
+            'music+other+speech.256.pkl',
+            'null.256.pkl',
+            'advertising+music+speech.256.pkl',
+            'music+other.256.pkl',
+            'other.256.pkl',
+            'other+speech.256.pkl',
+            'music+speech.256.pkl',
+            'speech.256.pkl',
+            'music.256.pkl'
             ]
 
         for model_file in model_list:
@@ -337,69 +337,101 @@ class LabriSMN(Analyzer):
             else:
                 music.append(0)  # No Music
 
-        # post processing :
-        # delete segments < 0.5 s
-        for a in range(len(start_speech)-2, 0, -1):
-            time = float(end_speech[a] - start_speech[a]) / 100
-            if time < 0.5:
-                start_speech = np.delete(start_speech, a+1)
-                end_speech[a] = end_speech[a+1]
-                end_speech = np.delete(end_speech,a)
-                speech = np.delete(speech,a)
-                music = np.delete(music,a)
 
-        start_music = start_speech
-        end_music = end_speech
 
-        # merge adjacent labels (3 times)
-        for a in range(len(start_speech)-2,0,-1):
-            if speech[a]==speech[a-1]:
-                start_speech = np.delete(start_speech,a+1)
-                end_speech[a] = end_speech[a+1]
-                end_speech = np.delete(end_speech,a)
-                speech = np.delete(speech,a)
 
-        # merge adjacent labels
-        for a in range(len(start_speech)-2,0,-1):
-            if speech[a]==speech[a-1]:
-                start_speech = np.delete(start_speech,a+1)
-                end_speech[a] = end_speech[a+1]
-                end_speech = np.delete(end_speech,a)
-                speech = np.delete(speech,a)
+            # copy
+            start_music=start_speech[:]
+            end_music=end_speech[:]
 
-        # merge adjacent labels
-        for a in range(len(start_speech)-2,0,-1):
-            if speech[a]==speech[a-1]:
-                start_speech = np.delete(start_speech,a+1)
-                end_speech[a] = end_speech[a+1]
-                end_speech = np.delete(end_speech,a)
-                speech = np.delete(speech,a)
+            # merge adjacent labels (speech)
+            newnblab=len(start_speech);
+            oldnew=0
+            while 1:  
+                for a in range(len(start_speech)-2,-1,-1):
+                    if speech[a]==speech[a+1]:
+                        del start_speech[a+1]
+                        end_speech[a]=end_speech[a+1]
+                        del end_speech[a+1]
+                        del speech[a+1]
+                        newnblab=newnblab-1;
+                if(oldnew==newnblab):
+                    break;
+                else:
+                    oldnew=newnblab;
+            
+            ### MUSIC
+            # merge adjacent labels 
+            newnblab=len(start_music);
+            oldnew=0
+            while 1:  
+                for a in range(len(start_music)-2,-1,-1):
+                    if music[a]==music[a+1]:
+                        del start_music[a+1]
+                        end_music[a]=end_music[a+1]
+                        del end_music[a+1]
+                        del music[a+1]
+                        newnblab=newnblab-1;
+                if(oldnew==newnblab):
+                    break;
+                else:
+                    oldnew=newnblab;
 
-        ### MUSIC
 
-        # merge adjacent labels (3 times)
-        for a in range(len(start_music)-2,0,-1):
-            if music[a]==music[a-1]:
-                start_music = np.delete(start_music,a+1)
-                end_music[a] = end_music[a+1]
-                end_music = np.delete(end_music,a)
-                music = np.delete(music,a)
+            # delete segments < 0.5 s
+            # speech
+            for a in range(len(start_speech)-2,0,-1):
+                time=float(end_speech[a]-start_speech[a])/100
+                if time < 0.5:
+                    if speech[a]==1:
+                        speech[a]=0
+                    if speech[a]==0:
+                        speech[a]=1
+                        
+            # music
+            for a in range(len(start_music)-2,0,-1):
+                time=float(end_music[a]-start_music[a])/100
+                if time < 0.5:
+                    if music[a]==1:
+                        music[a]=0
+                    if music[a]==1:
+                        music[a]=0
 
-        # merge adjacent labels
-        for a in range(len(start_music)-2,0,-1):
-            if music[a]==music[a-1]:
-                start_music=np.delete(start_music,a+1)
-                end_music[a]=end_music[a+1]
-                end_music=np.delete(end_music,a)
-                music=np.delete(music,a)
+                        
+            # ENCORE
+            # merge adjacent labels 
+            # speech
+            newnblab=len(start_speech);
+            oldnew=0
+            while 1:  
+                for a in range(len(start_speech)-2,-1,-1):
+                    if speech[a]==speech[a+1]:
+                        del start_speech[a+1]
+                        end_speech[a]=end_speech[a+1]
+                        del end_speech[a+1]
+                        del speech[a+1]
+                        newnblab=newnblab-1;
+                if(oldnew==newnblab):
+                    break;
+                else:
+                    oldnew=newnblab;
 
-        # merge adjacent labels
-        for a in range(len(start_music)-2,0,-1):
-            if music[a]==music[a-1]:
-                start_music = np.delete(start_music,a+1)
-                end_music[a] = end_music[a+1]
-                end_music = np.delete(end_music,a)
-                music = np.delete(music,a)
+            # music
+            newnblab=len(start_music);
+            oldnew=0
+            while 1:  
+                for a in range(len(start_music)-2,-1,-1):
+                    if music[a]==music[a+1]:
+                        del start_music[a+1]
+                        end_music[a]=end_music[a+1]
+                        del end_music[a+1]
+                        del music[a+1]
+                        newnblab=newnblab-1;
+                if(oldnew==newnblab):
+                    break;
+                else:
+                    oldnew=newnblab;
+        
 
 
         # display results
