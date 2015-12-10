@@ -188,23 +188,72 @@ class LabriSing(Analyzer):
         #print len(fin)
         #print len(label)
 
-        # post processing :
+        ############ NEW ##################
+       # merge adjacent labels (speech)
+       newnblab=len(debut);
+       oldnew=0
+       while 1:  
+           for a in range(len(debut)-2,-1,-1):
+               if label[a]==label[a+1]:
+                   del debut[a+1]
+                   fin[a]=fin[a+1]
+                   del fin[a+1]
+                   del label[a+1]
+                newnblab=newnblab-1;
+                if(oldnew==newnblab):
+                    break;
+                else:
+                    oldnew=newnblab;
+
         # delete segments < 0.5 s
         for a in range(len(debut)-2,0,-1):
-            time = float(fin[a]-debut[a])/100
+            time=float(fin[a]-debut[a])/100
             if time < 0.5:
-                debut = np.delete(debut,a+1)
-                fin[a] = fin[a+1]
-                fin = np.delete(fin,a)
-                label = np.delete(label,a)
+                if label[a]==1:
+                    label[a]=0
+                if label[a]==0:
+                    label[a]=1
+                        
+       # ENCORE
+        # merge adjacent labels 
+        # label
+        newnblab=len(debut);
+        oldnew=0
+        while 1:  
+            for a in range(len(debut)-2,-1,-1):
+                if label[a]==label[a+1]:
+                    del debut[a+1]
+                    fin[a]=fin[a+1]
+                    del fin[a+1]
+                    del label[a+1]
+                    newnblab=newnblab-1;
+                if(oldnew==newnblab):
+                    break;
+                else:
+                    oldnew=newnblab;
 
+
+                    
+        ########################"
+        # OLD            
+        # post processing : 
+        # delete segments < 0.5 s
+        #for a in range(len(debut)-2,0,-1):
+        #    time = float(fin[a]-debut[a])/100
+        #    if time < 0.5:
+        #        debut = np.delete(debut,a+1)
+        #        fin[a] = fin[a+1]
+        #        fin = np.delete(fin,a)
+        #        label = np.delete(label,a)
+        #
         # merge adjacent labels
-        for a in range(len(debut)-2,0,-1):
-            if label[a]==label[a-1]:
-                debut=np.delete(debut,a+1)
-                fin[a]=fin[a+1]
-                fin=np.delete(fin,a)
-                label=np.delete(label,a)
+        #for a in range(len(debut)-2,0,-1):
+        #    if label[a]==label[a-1]:
+        #        debut=np.delete(debut,a+1)
+        #        fin[a]=fin[a+1]
+        #        fin=np.delete(fin,a)
+        #        label=np.delete(label,a)
+        #
 
         for a in range(1,len(debut)):
             time=float(fin[a]-debut[a])/100
