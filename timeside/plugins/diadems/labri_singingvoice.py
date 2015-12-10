@@ -189,16 +189,16 @@ class LabriSing(Analyzer):
         #print len(label)
 
         ############ NEW ##################
-       # merge adjacent labels (speech)
-       newnblab=len(debut);
-       oldnew=0
-       while 1:  
-           for a in range(len(debut)-2,-1,-1):
-               if label[a]==label[a+1]:
-                   del debut[a+1]
-                   fin[a]=fin[a+1]
-                   del fin[a+1]
-                   del label[a+1]
+        # merge adjacent labels (speech)
+        newnblab = len(debut)
+        oldnew = 0
+        while 1:  
+            for a in range(len(debut)-2,-1,-1):
+                if label[a]==label[a+1]:
+                    del debut[a+1]
+                    fin[a]=fin[a+1]
+                    del fin[a+1]
+                    del label[a+1]
                 newnblab=newnblab-1;
                 if(oldnew==newnblab):
                     break;
@@ -214,10 +214,10 @@ class LabriSing(Analyzer):
                 if label[a]==0:
                     label[a]=1
                         
-       # ENCORE
+        # ENCORE
         # merge adjacent labels 
         # label
-        newnblab=len(debut);
+        newnblab=len(debut)
         oldnew=0
         while 1:  
             for a in range(len(debut)-2,-1,-1):
@@ -270,7 +270,7 @@ class LabriSing(Analyzer):
         sing_result.data_object.duration = (np.asarray(fin) - np.asarray(debut)) / 100
         sing_result.data_object.label_metadata.label = {0: 'No Singing', 1: 'Singing'}
         self.add_result(sing_result)
-
+        
 
 # Generate Grapher for Labri Singing detection analyzer
 from timeside.core.grapher import DisplayAnalyzer
