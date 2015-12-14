@@ -136,11 +136,11 @@ class LabriSing(Analyzer):
         nosingfname = os.path.join(models_dir, 'nosing.512.gmm.sklearn.pickle')
 
         # llh
-        singmm=pickle.load(open(singfname, 'rb'))
-        nosingmm=pickle.load(open(nosingfname, 'rb'))
+        singmm = pickle.load(open(singfname, 'rb'))
+        nosingmm = pickle.load(open(nosingfname, 'rb'))
 
         # llh diff
-        result = 0.5 + 0.5 * (llh(singmm,features) - llh(nosingmm,features))
+        result = 0.5 + 0.5 * (llh(singmm, features) - llh(nosingmm, features))
 
         # onsets
         aubio_t_res = self.process_pipe.results[self.parents['aubio_temporal'].uuid()]
@@ -168,12 +168,12 @@ class LabriSing(Analyzer):
             fin.append(current_onset)
             debut.append(current_onset)
             label.append(current_label)
-            #print("[%d %d] (%d ms) %s (%f)") % (previous_onset, current_onset,  (current_onset-previous_onset)*10, current_label,sum)
+            # print("[%d %d] (%d ms) %s (%f)") % (previous_onset, current_onset,  (current_onset-previous_onset)*10, current_label,sum)
             previous_onset = current_onset
 
         # last segment
-        current_onset =  len(features)
-        sum=0
+        current_onset = len(features)
+        sum = 0
         for b in range(previous_onset, current_onset):
             sum += result[b]
         if sum > 0:
@@ -182,28 +182,28 @@ class LabriSing(Analyzer):
             current_label = 0  # No singing
         fin.append(current_onset)
         label.append(current_label)
-        #print("[%d %d] (%d ms) %s (%f)") % (previous_onset, current_onset,  (current_onset-previous_onset)*10, current_label,sum)
+        # print("[%d %d] (%d ms) %s (%f)") % (previous_onset, current_onset,  (current_onset-previous_onset)*10, current_label,sum)
 
-        #print len(debut)
-        #print len(fin)
-        #print len(label)
+        # print len(debut)
+        # print len(fin)
+        # print len(label)
 
-        ############ NEW ##################
+        # ########### NEW ##################
         # merge adjacent labels (speech)
         newnblab = len(debut)
         oldnew = 0
-        while 1:  
+        while 1:
             for a in range(len(debut)-2,-1,-1):
                 if label[a]==label[a+1]:
                     del debut[a+1]
                     fin[a]=fin[a+1]
                     del fin[a+1]
                     del label[a+1]
-                newnblab=newnblab-1;
-                if(oldnew==newnblab):
-                    break;
-                else:
-                    oldnew=newnblab;
+                    newnblab=newnblab-1;
+            if(oldnew==newnblab):
+                break;
+            else:
+                oldnew=newnblab;
 
         # delete segments < 0.5 s
         for a in range(len(debut)-2,0,-1):
@@ -219,7 +219,7 @@ class LabriSing(Analyzer):
         # label
         newnblab=len(debut)
         oldnew=0
-        while 1:  
+        while 1:
             for a in range(len(debut)-2,-1,-1):
                 if label[a]==label[a+1]:
                     del debut[a+1]
@@ -227,10 +227,10 @@ class LabriSing(Analyzer):
                     del fin[a+1]
                     del label[a+1]
                     newnblab=newnblab-1;
-                if(oldnew==newnblab):
-                    break;
-                else:
-                    oldnew=newnblab;
+            if(oldnew==newnblab):
+                break;
+            else:
+                oldnew=newnblab;
 
 
                     
@@ -255,22 +255,17 @@ class LabriSing(Analyzer):
         #        label=np.delete(label,a)
         #
 
-        for a in range(1,len(debut)):
-            time=float(fin[a]-debut[a])/100
-            #print("%d %f %f %s") % (a, debut[a]/100, fin[a]/100,label[a])
+        for a in range(1, len(debut)):
+            time = float(fin[a] - debut[a]) / 100
 
-
-        # TF: pour la suite, il faut voir ce que tu veux faire comme resultat : une segmentation 'sing'/'no sing' c'est ça ?
-
-        # JLR : L'idée serait d'enregistrer les segments sous la forme [debut fin label]
         sing_result = self.new_result(data_mode='label', time_mode='segment')
-        #sing_result.id_metadata.id += '.' + 'segment'
+        # sing_result.id_metadata.id += '.' + 'segment'
         sing_result.data_object.label = label
         sing_result.data_object.time = np.asarray(debut) /100
         sing_result.data_object.duration = (np.asarray(fin) - np.asarray(debut)) / 100
         sing_result.data_object.label_metadata.label = {0: 'No Singing', 1: 'Singing'}
         self.add_result(sing_result)
-        
+
 
 # Generate Grapher for Labri Singing detection analyzer
 from timeside.core.grapher import DisplayAnalyzer
