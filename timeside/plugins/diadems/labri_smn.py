@@ -33,6 +33,9 @@ import numpy as np
 import pickle
 import os.path
 
+# pyannote from pyannote.core import Annotation
+# pyannote from pyannote.core import Segment
+
 # Require Yaafe
 if not _WITH_YAAFE:
     raise ImportError('yaafelib is missing')
@@ -324,114 +327,132 @@ class LabriSMN(Analyzer):
         end_speech = []
         speech = []
         music = []
+        # pyannote speech_a = Annotation(modality="Speech")
+        # pyannote music_a = Annotation(modality="Music")
+        
         for (deb, dur, lab) in back:
             start_speech.append(deb)
             end_speech.append(deb+dur)
+
+            # pyannote segment = Segment(deb/100, (deb+dur)/100)
             #print " LAB ----> %s" % lab
             if lab.find("speech") >= 0:
                 speech.append(1)  # Speech
+                # pyannote speech_a[segment] = "speech"
             else:
                 speech.append(0)  # No Speech
+                # pyannote speech_a[segment] = "Non speech"
             if lab.find("music") >= 0:
                 music.append(1)  # Music
+                # pyannote music_a[segment] = "Music"
             else:
                 music.append(0)  # No Music
+                # pyannote music_a[segment] = "Non music"
 
-
-
-
-            # copy
-            start_music=start_speech[:]
-            end_music=end_speech[:]
-
-            # merge adjacent labels (speech)
-            newnblab=len(start_speech);
-            oldnew=0
-            while 1:  
-                for a in range(len(start_speech)-2,-1,-1):
-                    if speech[a]==speech[a+1]:
-                        del start_speech[a+1]
-                        end_speech[a]=end_speech[a+1]
-                        del end_speech[a+1]
-                        del speech[a+1]
-                        newnblab=newnblab-1;
-                if(oldnew==newnblab):
-                    break;
-                else:
-                    oldnew=newnblab;
             
-            ### MUSIC
-            # merge adjacent labels 
-            newnblab=len(start_music);
-            oldnew=0
-            while 1:  
-                for a in range(len(start_music)-2,-1,-1):
-                    if music[a]==music[a+1]:
-                        del start_music[a+1]
-                        end_music[a]=end_music[a+1]
-                        del end_music[a+1]
-                        del music[a+1]
-                        newnblab=newnblab-1;
-                if(oldnew==newnblab):
-                    break;
-                else:
-                    oldnew=newnblab;
-
-
-            # delete segments < 0.5 s
-            # speech
-            for a in range(len(start_speech)-2,0,-1):
-                time=float(end_speech[a]-start_speech[a])/100
-                if time < 0.5:
-                    if speech[a]==1:
-                        speech[a]=0
-                    if speech[a]==0:
-                        speech[a]=1
-                        
-            # music
-            for a in range(len(start_music)-2,0,-1):
-                time=float(end_music[a]-start_music[a])/100
-                if time < 0.5:
-                    if music[a]==1:
-                        music[a]=0
-                    if music[a]==1:
-                        music[a]=0
-
-                        
-            # ENCORE
-            # merge adjacent labels 
-            # speech
-            newnblab=len(start_speech);
-            oldnew=0
-            while 1:  
-                for a in range(len(start_speech)-2,-1,-1):
-                    if speech[a]==speech[a+1]:
-                        del start_speech[a+1]
-                        end_speech[a]=end_speech[a+1]
-                        del end_speech[a+1]
-                        del speech[a+1]
-                        newnblab=newnblab-1;
-                if(oldnew==newnblab):
-                    break;
-                else:
-                    oldnew=newnblab;
-
-            # music
-            newnblab=len(start_music);
-            oldnew=0
-            while 1:  
-                for a in range(len(start_music)-2,-1,-1):
-                    if music[a]==music[a+1]:
-                        del start_music[a+1]
-                        end_music[a]=end_music[a+1]
-                        del end_music[a+1]
-                        del music[a+1]
-                        newnblab=newnblab-1;
-                if(oldnew==newnblab):
-                    break;
-                else:
-                    oldnew=newnblab;
         
+        # pyannote print '<---------------->'
+        # pyannote for segment, track, label in speech_a.smooth(0.5).itertracks(label=True):
+        # pyannote     print segment, track, label
+        # pyannote print '<---------------->'
+        # pyannote for segment, track, label in music_a.smooth(0.5).itertracks(label=True):
+        # pyannote     print segment, track, label
+        # pyannote print '<---------------->'
+
+
+
+        # copy
+        start_music=start_speech[:]
+        end_music=end_speech[:]
+
+        # merge adjacent labels (speech)
+        newnblab=len(start_speech);
+        oldnew=0
+        while 1:  
+            for a in range(len(start_speech)-2,-1,-1):
+                if speech[a]==speech[a+1]:
+                    del start_speech[a+1]
+                    end_speech[a]=end_speech[a+1]
+                    del end_speech[a+1]
+                    del speech[a+1]
+                    newnblab=newnblab-1;
+            if(oldnew==newnblab):
+                break;
+            else:
+                oldnew=newnblab;
+
+        ### MUSIC
+        # merge adjacent labels 
+        newnblab=len(start_music);
+        oldnew=0
+        while 1:  
+            for a in range(len(start_music)-2,-1,-1):
+                if music[a]==music[a+1]:
+                    del start_music[a+1]
+                    end_music[a]=end_music[a+1]
+                    del end_music[a+1]
+                    del music[a+1]
+                    newnblab=newnblab-1;
+            if(oldnew==newnblab):
+                break;
+            else:
+                oldnew=newnblab;
+
+
+        # delete segments < 0.5 s
+        # speech
+        for a in range(len(start_speech)-2,0,-1):
+            time=float(end_speech[a]-start_speech[a])/100
+            if time < 0.5:
+                if speech[a]==1:
+                    speech[a]=0
+                if speech[a]==0:
+                    speech[a]=1
+
+        # music
+        for a in range(len(start_music)-2,0,-1):
+            time=float(end_music[a]-start_music[a])/100
+            if time < 0.5:
+                if music[a]==1:
+                    music[a]=0
+                if music[a]==1:
+                    music[a]=0
+
+
+        # ENCORE
+        # merge adjacent labels 
+        # speech
+        newnblab=len(start_speech);
+        oldnew=0
+        while 1:  
+            for a in range(len(start_speech)-2,-1,-1):
+                if speech[a]==speech[a+1]:
+                    del start_speech[a+1]
+                    end_speech[a]=end_speech[a+1]
+                    del end_speech[a+1]
+                    del speech[a+1]
+                    newnblab=newnblab-1;
+            if(oldnew==newnblab):
+                break;
+            else:
+                oldnew=newnblab;
+
+        # music
+        newnblab=len(start_music);
+        oldnew=0
+        while 1:  
+            for a in range(len(start_music)-2,-1,-1):
+                if music[a]==music[a+1]:
+                    del start_music[a+1]
+                    end_music[a]=end_music[a+1]
+                    del end_music[a+1]
+                    del music[a+1]
+                    newnblab=newnblab-1;
+            if(oldnew==newnblab):
+                break;
+            else:
+                oldnew=newnblab;
+
 
 
         # display results
