@@ -23,7 +23,7 @@ before_install:
   - conda info -a
 # Install binary dependencies with conda
   - echo $TRAVIS_PYTHON_VERSION
-  - conda create -q -n test-environment -c piem --file conda-requirements.txt python=$TRAVIS_PYTHON_VERSION
+  - conda create -q -n test-environment -c thomasfillon -c piem --file conda-requirements.txt python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment
 
 # Install TimeSide
