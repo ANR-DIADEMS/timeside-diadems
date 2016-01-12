@@ -207,9 +207,8 @@ class LabriSing(Analyzer):
 
         # delete segments < 0.5 s
         for a in range(len(debut)-2,0,-1):
-            time = float(fin[a]-debut[a])/100
+            time=float(fin[a]-debut[a])/100
             if time < 0.5:
-
                 if label[a]==1:
                     label[a]=0
                 if label[a]==0:
@@ -232,8 +231,6 @@ class LabriSing(Analyzer):
                 break;
             else:
                 oldnew=newnblab;
-
-
 
         ########################"
         # OLD
