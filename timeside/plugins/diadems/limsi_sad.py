@@ -24,7 +24,7 @@
 from timeside.core import implements, interfacedoc, get_processor, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 
-from timeside.core.tools.parameters import Enum, HasTraits, Float
+from timeside.core.tools.parameters import Enum, HasTraits, Float, Bool
 
 import numpy as np
 import pickle
@@ -97,7 +97,7 @@ def smooth(lin, winsize):
 class LimsiSad(Analyzer):
     """
     Limsi Speech Activity Detection Systems
-    
+
     LimsiSad performs frame level speech activity detection based on trained GMM models.
     For each frame, it computes the log likelihood ratio (LLR) between a speech model
     and a non speech model: the highest is the estimate, the largest is the probability
@@ -120,7 +120,7 @@ class LimsiSad(Analyzer):
     * sad_segments: speech/non speech segments
 
     ------------------------------------------
-    
+
     Performance with the three LIMSI SAD analyzers (error rate: the lower the better)
     on three samples from Maya ritual speech
     (CNRSMH_I_2013_507_001_01, CNRSMH_I_2013_507_001_02, CNRSMH_I_2013_507_001_03)
@@ -185,6 +185,9 @@ class LimsiSad(Analyzer):
         speech_threshold = Float
         dllh_min = Float
         dllh_max = Float
+        adapt = Bool
+        exclude = Float
+        keep = Float
 
     def __init__(self, sad_model='etape', dews=0.2, speech_threshold=1.,
                  dllh_min = -10., dllh_max = 10., adapt = False, exclude = 0.01, keep = 0.20):
@@ -219,9 +222,9 @@ class LimsiSad(Analyzer):
           according this (min_llh_difference, max_llh_difference) tuple
           Usefull for plotting log likelihood differences
           if set to None, no bounding will be done
-        
+
         adapt: perform unsupervised adaptation of models (bool)
-        
+
         exclude, keep: ratio of higher/lower LLR-frames to keep for retraining
           speech/non-speech models
         """
@@ -256,6 +259,10 @@ class LimsiSad(Analyzer):
         self.speech_threshold = speech_threshold
         self.dllh_min = dllh_min
         self.dllh_max = dllh_max
+
+        self.adapt = adapt
+        self.exclude = exclude
+        self.keep = keep
 
     @staticmethod
     @interfacedoc
@@ -296,7 +303,7 @@ class LimsiSad(Analyzer):
         if self.adapt:
             # perform temporal smoothing
             llr = smooth(res, ws)
-    
+
             # select the frame index with lowest 1% to 20% or highest 80 to 99% LLR
             idx = np.argsort(llr)
             l = len(idx)
@@ -308,7 +315,7 @@ class LimsiSad(Analyzer):
             m = x.mean(0)
             v = ((x - m) ** 2).mean(0)
             nonspeech = GMM([1], m.reshape(1,-1), v.reshape(1,-1))
-        
+
             x = features[highLLR]
             m = x.mean(0)
             v = ((x - m) ** 2).mean(0)
@@ -321,7 +328,7 @@ class LimsiSad(Analyzer):
         if self.dllh_min is not None and self.dllh_max is not None:
             res = np.minimum(np.maximum(res,  self.dllh_min), self.dllh_max)
 
-        # performs dilation, erosion, erosion, dilatation        
+        # performs dilation, erosion, erosion, dilatation
         deed_llh = dilatation(erosion(erosion(dilatation(res, ws), ws), ws), ws)
 
         # infer speech and non speech segments from dilated
