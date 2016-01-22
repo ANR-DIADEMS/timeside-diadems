@@ -1,37 +1,32 @@
 language: python
 python:
- - "2.7"
-env:
- #- NUMPY_VERSION=1.6.2 SCIPY_VERSION=0.11 # Almost Debian Jessie (scipy should be 0.10.1) and Almost Ubuntu precise (12.04LTS) (scipy should be 0.9.0, numpy 1.6.1)
- #- NUMPY_VERSION=1.8.1 SCIPY_VERSION=0.13.3 # Ubuntu trusty (14.04LTS)
- #- NUMPY_VERSION=1.8.2 SCIPY_VERSION=0.14.0 # Debian Jessie
- - NUMPY_VERSION=1.9.1 SCIPY_VERSION=0.14.0
+  - "2.7"
 
 #virtualenv:
 # system_site_packages: true
 
 # command to prepare the system to install prerequisites or dependencies
 before_install:
-# Install Gstreamer
- - sudo add-apt-repository -y ppa:donk/gstreamer
- - sudo apt-get -qq update
- - sudo apt-get install -qq python-gst0.10 gstreamer0.10-plugins-good gstreamer0.10-gnonlin gstreamer0.10-plugins-ugly gstreamer0.10-plugins-bad gstreamer0.10-alsa
-# Install Vamp simple host
- - sudo apt-get install vamp-examples
+  - sudo add-apt-repository -y ppa:donk/gstreamer
+  - sudo apt-get -qq update
+  - export DEBIAN_PACKAGES=$(egrep -v "^\s*(#|$)" debian-requirements.txt)
+  - sudo apt-get install -qq $DEBIAN_PACKAGES 
+
 # Install conda
- - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
- - bash miniconda.sh -b -p $HOME/miniconda
- - export PATH="$HOME/miniconda/bin:$PATH"
- - hash -r
- - conda config --set always_yes yes --set changeps1 no
- - conda update -q conda
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
 # Useful for debugging any issues with conda
- - conda info -a
+  - conda info -a
 # Install binary dependencies with conda
- - deps="setuptools pip coverage matplotlib h5py pytables pandas>=0.15.1 networkx nltk>=3.0 scikit-learn numexpr"
- - conda create -q -n test-environment $deps numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION python=$TRAVIS_PYTHON_VERSION
- - rm ~/miniconda/envs/test-environment/lib/libm.so.6 # use the system libm; see github.com/ContinuumIO/anaconda-issues/issues/182
- - source activate test-environment
+  - echo $TRAVIS_PYTHON_VERSION
+  - conda create -q -n test-environment -c thomasfillon -c piem --file conda-requirements.txt python=$TRAVIS_PYTHON_VERSION
+  - source activate test-environment
+
+# Install TimeSide
 install:
  - pip install -r requirements.txt
 
@@ -42,7 +37,6 @@ before_script:
  - pip install python-coveralls
 
 script:
- - ls -al /home/travis/miniconda/envs/test-environment/lib/python2.7/site-packages/
  - python -c"import timeside.core; timeside.core.processor.list_processors()"
  - coverage run --source=timeside.plugins.diadems setup.py test
 
