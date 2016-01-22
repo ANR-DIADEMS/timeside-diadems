@@ -54,6 +54,7 @@ setup(
         'pyannote.core',
         'pyannote.features',
         'pyannote.algorithms',
+        'pyannote.metrics'
         ],
     # PyPI
     name='TimeSide-Diadems',
