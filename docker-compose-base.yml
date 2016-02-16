@@ -1,6 +1,0 @@
-app:
-  build: .
-  env_file:
-    - examples/sandbox/sandbox-docker.env
-  command: /bin/bash /opt/TimeSide/examples/deploy/start_app.sh
-

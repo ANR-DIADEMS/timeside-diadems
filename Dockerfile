@@ -20,12 +20,11 @@ MAINTAINER Guillaume Pellerin <yomguy@parisson.com>, Thomas Fillon <thomas@paris
 RUN mkdir /opt/TimeSide-Diadems
 WORKDIR /opt/TimeSide-Diadems
 
-
 # Install binary dependencies with conda
 ADD conda-requirements.txt /opt/TimeSide-Diadems/
 #ADD requirements.txt /opt/TimeSide-Diadems/
 
-RUN conda install -c piem --file conda-requirements.txt
+RUN conda install -c thomasfillon -c piem --file conda-requirements.txt
 
 # Install remaining depencies with pip
 # RUN pip install -r requirements.txt
@@ -39,4 +38,3 @@ RUN pip install -r requirements.txt
 
 
 EXPOSE 8000
-
