@@ -54,6 +54,7 @@ setup(
         'pyannote.core',
         'pyannote.features',
         'pyannote.algorithms',
+        'pyannote.metrics'
         ],
     name='TimeSide-Diadems',
     url='https://github.com/ANR-DIADEMS/timeside-diadems',
