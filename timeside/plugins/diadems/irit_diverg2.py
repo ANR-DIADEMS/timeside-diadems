@@ -65,10 +65,11 @@ class IRITDiverg(Analyzer):
 
         audio_data = self.parents['waveform'].results['waveform_analyzer'].data
         if audio_data.shape[1] > 1:
-            data = list(audio_data.mean(axis=1))
-        else:
-            data = list(audio_data)
-        frontieres = segment(data, self.samplerate(), self.ordre, self.min_seg_len)
+            audio_data = audio_data.mean(axis=1)
+
+        data = (audio_data * 32768).clip(-32768, 32767).astype("int16")
+        
+        frontieres = segment(list(data), self.samplerate(), self.ordre, self.min_seg_len)
 
         segs = self.new_result(data_mode='label', time_mode='event')
         segs.id_metadata.id += '.' + 'segments'
