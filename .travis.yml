@@ -18,4 +18,5 @@ install:
 
 
 script:
-  - docker-compose run app sh -c "pip install -U coverage; python -c"import timeside.core; timeside.core.list_processors()";  coverage run --source=timeside.plugins.diadems setup.py test"
+  - docker-compose run app python -c"import timeside.core; timeside.core.list_processors()"
+  - docker-compose run app sh -c "pip install -U coverage; coverage run --source=timeside.plugins.diadems setup.py test"
