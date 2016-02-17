@@ -17,12 +17,11 @@ FROM parisson/timeside:latest-dev
 
 MAINTAINER Guillaume Pellerin <yomguy@parisson.com>, Thomas Fillon <thomas@parisson.com>
 
-RUN mkdir /opt/TimeSide-Diadems
-WORKDIR /opt/TimeSide-Diadems
+RUN mkdir -p /srv/src/timeside-diadems
+WORKDIR /srv/src/timeside-diadems
 
 # Install binary dependencies with conda
-ADD conda-requirements.txt /opt/TimeSide-Diadems/
-#ADD requirements.txt /opt/TimeSide-Diadems/
+ADD conda-requirements.txt /srv/src/timeside-diadems
 
 RUN conda install -c thomasfillon -c piem --file conda-requirements.txt
 
@@ -30,11 +29,9 @@ RUN conda install -c thomasfillon -c piem --file conda-requirements.txt
 # RUN pip install -r requirements.txt
 
 # Clone app
-ADD . /opt/TimeSide-Diadems
-WORKDIR /opt/TimeSide-Diadems
+ADD . /srv/src/timeside-diadems
 
 # Install remaining depencies with pip (+ install in develop mode with "-e .")
 RUN pip install -r requirements.txt
+RUN pip install -e .
 
-
-EXPOSE 8000
