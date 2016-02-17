@@ -21,7 +21,7 @@ RUN mkdir -p /srv/src/timeside-diadems
 WORKDIR /srv/src/timeside-diadems
 
 # Install binary dependencies with conda
-ADD conda-requirements.txt /srv/src/timeside-diadems
+ADD conda-requirements.txt /srv/src/timeside-diadems/
 
 RUN conda install -c thomasfillon -c piem --file conda-requirements.txt
 
@@ -29,7 +29,7 @@ RUN conda install -c thomasfillon -c piem --file conda-requirements.txt
 # RUN pip install -r requirements.txt
 
 # Clone app
-ADD . /srv/src/timeside-diadems
+ADD . /srv/src/timeside-diadems/
 
 # Install remaining depencies with pip (+ install in develop mode with "-e .")
 RUN pip install -r requirements.txt
