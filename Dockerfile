@@ -26,12 +26,12 @@ ADD conda-requirements.txt /srv/src/timeside-diadems/
 RUN conda install -c thomasfillon -c piem --file conda-requirements.txt
 
 # Install remaining depencies with pip
-# RUN pip install -r requirements.txt
-
-# Clone app
-ADD . /srv/src/timeside-diadems/
-
-# Install remaining depencies with pip (+ install in develop mode with "-e .")
+ADD requirements.txt /srv/src/timeside-diadems/
 RUN pip install -r requirements.txt
-RUN pip install --global-option=build_ext -e .
+
+# Clone and install app
+ADD . /srv/src/timeside-diadems/
+RUN pip install -e .
+
+
 

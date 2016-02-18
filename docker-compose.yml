@@ -1,13 +1,21 @@
-app:
+src:
   build: .
   volumes:
     - ./:/srv/src/timeside-diadems/
+  command: "pip install -e /srv/src/timeside-diadems"
+
+app:
+  build: .
+  volumes_from:
+    - src
+  links:
+    - src
   command: "true"
 
 notebook:
   build: .
-  volumes:
-    - ./:/srv/src/timeside-diadems/
+  volumes_from:
+    - src
   ports:
     - "8888:8888"
   command: sh -c "jupyter notebook --no-browser --ip=0.0.0.0"
