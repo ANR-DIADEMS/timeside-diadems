@@ -33,5 +33,5 @@ ADD . /srv/src/timeside-diadems/
 
 # Install remaining depencies with pip (+ install in develop mode with "-e .")
 RUN pip install -r requirements.txt
-RUN pip install -e .
+RUN pip install --global-option=build_ext -e .
 
