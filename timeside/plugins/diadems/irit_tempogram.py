@@ -28,7 +28,7 @@ from numpy import arange, array, exp, pi, linspace
 class IRITTempogram(Analyzer):
     implements(IAnalyzer)
 
-    def __init__(self, blocksize=None, stepsize=None):
+    def __init__(self):
         super(IRITTempogram, self).__init__()
 
         self.parents['irit_diverg2'] = IRITDiverg()

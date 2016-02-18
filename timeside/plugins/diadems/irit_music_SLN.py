@@ -29,7 +29,7 @@ from numpy import mean, diff, arange
 class IRITMusicSLN(Analyzer):
     implements(IAnalyzer)
 
-    def __init__(self, blocksize=None, stepsize=None):
+    def __init__(self):
         super(IRITMusicSLN, self).__init__()
 
         self.parents['irit_diverg2'] = IRITDiverg()

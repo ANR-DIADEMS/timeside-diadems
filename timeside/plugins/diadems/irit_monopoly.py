@@ -28,7 +28,7 @@ from timeside.core.preprocessors import frames_adapter
 class IRITMonopoly(Analyzer):
     implements(IAnalyzer)
 
-    def __init__(self, blocksize=None, stepsize=None):
+    def __init__(self):
         super(IRITMonopoly, self).__init__()
         self.wLen = 1.0
         self.wStep = 0.5

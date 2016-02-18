@@ -29,7 +29,7 @@ class IRITMusicSNB(Analyzer):
 
     implements(IAnalyzer)
 
-    def __init__(self, blocksize=1024, stepsize=None, samplerate=None):
+    def __init__(self):
         super(IRITMusicSNB, self).__init__()
         self.parents['irit_diverg2'] = IRITDiverg()
         self.wLen = 1.0

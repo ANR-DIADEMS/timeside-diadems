@@ -29,11 +29,12 @@ class IRITDiverg(Analyzer):
     '''
     '''
 
-    def __init__(self, blocksize=1024, stepsize=None):
+    def __init__(self):
         super(IRITDiverg, self).__init__()
         self.parents['waveform'] = Waveform()
         self.ordre = 2
         self.min_seg_len = 0.01
+
     @interfacedoc
     def setup(self, channels=None, samplerate=None,
               blocksize=None, totalframes=None):

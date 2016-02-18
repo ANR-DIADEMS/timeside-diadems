@@ -139,7 +139,7 @@ class IRITHarmoTracker(Analyzer):
     '''
     '''
 
-    def __init__(self, blocksize=1024, stepsize=None):
+    def __init__(self):
         super(IRITHarmoTracker, self).__init__()
         self.low_freq=0.0
         self.high_freq=None

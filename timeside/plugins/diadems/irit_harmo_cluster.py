@@ -138,7 +138,7 @@ class IRITHarmoCluster(Analyzer):
     '''
     '''
 
-    def __init__(self, blocksize=1024, stepsize=None):
+    def __init__(self):
         super(IRITHarmoCluster, self).__init__()
         self.parents['irit_harmo_tracking'] = IRITHarmoTracker()
 
