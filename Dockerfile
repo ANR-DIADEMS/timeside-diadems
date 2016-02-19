@@ -1,5 +1,5 @@
-# Copyright 2013 Thatcher Peskens
-# Copyright 2014 Guillaume Pellerin
+# Copyright 2015 Guillaume Pellerin
+# Copyright 2015 Thomas Fillon
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,28 +15,23 @@
 
 FROM parisson/timeside:latest-dev
 
-MAINTAINER Guillaume Pellerin <yomguy@parisson.com>, Thomas fillon <thomas@parisson.com>
+MAINTAINER Guillaume Pellerin <yomguy@parisson.com>, Thomas Fillon <thomas@parisson.com>
 
-RUN mkdir /opt/TimeSide-Diadems
-WORKDIR /opt/TimeSide-Diadems
-
+RUN mkdir -p /srv/src/timeside-diadems
+WORKDIR /srv/src/timeside-diadems
 
 # Install binary dependencies with conda
-ADD conda-requirements.txt /opt/TimeSide-Diadems/
-#ADD requirements.txt /opt/TimeSide-Diadems/
+ADD conda-requirements.txt /srv/src/timeside-diadems/
 
-RUN conda install --file conda-requirements.txt
+RUN conda install -c thomasfillon -c piem --file conda-requirements.txt
 
 # Install remaining depencies with pip
-# RUN pip install -r requirements.txt
-
-# Clone app
-ADD . /opt/TimeSide-Diadems
-WORKDIR /opt/TimeSide-Diadems
-
-# Install remaining depencies with pip (+ install in develop mode with "-e .")
+ADD requirements.txt /srv/src/timeside-diadems/
 RUN pip install -r requirements.txt
 
+# Clone and install app
+ADD . /srv/src/timeside-diadems/
+RUN pip install -e .
 
-EXPOSE 8000
+
 
