@@ -88,7 +88,7 @@ class IRITMonopoly(Analyzer):
 
         :return:
         """
-        segList= monopoly(self.confidence, 1.0/self.pitch_step, self.wLen, self.wStep)
+        segList = monopoly(self.confidence, 1.0/self.pitch_step, self.wLen, self.wStep)
 
         label= {True: "Mono", False: "Poly"}
         segs = self.new_result(data_mode='label', time_mode='segment')
@@ -100,6 +100,8 @@ class IRITMonopoly(Analyzer):
         segs.data_object.label = array([s[2] for s in segList])
         segs.data_object.time = array([s[0] for s in segList])
         segs.data_object.duration = array([s[1] - s[0] for s in segList])
+
+        segs.data_object.merge_segment()
 
         self.add_result(segs)
 
