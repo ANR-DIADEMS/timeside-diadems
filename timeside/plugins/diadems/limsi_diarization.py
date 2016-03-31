@@ -171,7 +171,7 @@ class LimsiDiarization(Analyzer):
 
         # performs BIC clustering
         bicClustering = BICClustering(covariance_type='full', penalty_coef=self.bic_penalty_coeff)
-        hypothesis = bicClustering(chunks, feature=pyannotefeat)
+        hypothesis = bicClustering(chunks, features=pyannotefeat)
 
         # get diarisation results
         tmplabel = [int(h[2]) for h in hypothesis.itertracks(True)]
