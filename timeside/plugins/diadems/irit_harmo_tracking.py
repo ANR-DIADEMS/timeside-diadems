@@ -22,7 +22,10 @@
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
 from timeside.core.preprocessors import frames_adapter
-from numpy import fft, hamming, log2, log10, sqrt, mean, linspace
+from numpy import fft, hamming, log2, log10, sqrt, mean, argmax, linspace
+from itertools import groupby
+from networkx import Graph
+from networkx.algorithms.components import connected_components
 
 class Node(object):
 
@@ -139,7 +142,7 @@ class IRITHarmoTracker(Analyzer):
     '''
     '''
 
-    def __init__(self):
+    def __init__(self, blocksize=1024, stepsize=None):
         super(IRITHarmoTracker, self).__init__()
         self.low_freq=0.0
         self.high_freq=None
@@ -157,7 +160,7 @@ class IRITHarmoTracker(Analyzer):
         self.trackings = []
         self.low_freq_id, self.high_freq_id = 0, 0
         self.frequency_line =[]
-        self.cmpt = 0
+        self.time = 0.0
         self.window = []
 
     @interfacedoc
@@ -192,17 +195,17 @@ class IRITHarmoTracker(Analyzer):
 
     @frames_adapter
     def process(self, frames, eod=False):
-        self.cmpt += 1
+        self.time += self.wStep
         frame = self.window * frames[:, 0]
-        spectrum = map(abs, fft.rfft(frame, n=2*self.n_bins)[self.low_freq_id:self.high_freq_id])
-        peaks = sorted([Node(self.frequency_line[self.low_freq_id+i], spectrum[i], self.cmpt*self.input_blocksize)
+        spectrum = abs(fft.rfft(frame, n=2*self.n_bins)[self.low_freq_id:self.high_freq_id])
+        peaks = sorted([Node(self.frequency_line[self.low_freq_id+i], spectrum[i], self.time)
                         for i in range(1, self.high_freq_id-self.low_freq_id-1) if spectrum[i-1] < spectrum[i] > spectrum[i+1]],
                        key=lambda x: x.amplitude, reverse=True)[:self.n_peaks]
 
         # Continuer les trackings avec les pics actifs
         for a in self.trackings:
 
-            continue_loop = True
+            continue_loop = a.active
 
             i = 0
 

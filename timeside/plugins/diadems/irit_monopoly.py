@@ -21,24 +21,26 @@
 
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
-from numpy import mean, var, array, log
-from timeside.plugins.diadems.yin import getPitch
+from numpy import mean, var, array, log, arange
+from timeside.plugins.analyzer.yin import getPitch
 from timeside.core.preprocessors import frames_adapter
 
 class IRITMonopoly(Analyzer):
     implements(IAnalyzer)
 
-    def __init__(self):
+    def __init__(self, blocksize=None, stepsize=None):
         super(IRITMonopoly, self).__init__()
         self.wLen = 1.0
         self.wStep = 0.5
         self.confidence =[]
+        self.pitch = []
         self.buffer = []
         self.pitch_len = 0.02
         self.pitch_step = 0.02
         self.pitch_min = 60
         self.pitch_max = None
         self.yin_threshold_harmo=0.3
+
 
     @interfacedoc
     def setup(self, channels=None, samplerate=None, blocksize=None,
@@ -71,15 +73,16 @@ class IRITMonopoly(Analyzer):
 
     @frames_adapter
     def process(self, frames, eod=False):
-        self.confidence += []
+
         frame = self.buffer + list(frames[:, 0])
         demi = int(self.pitch_len*self.samplerate()/2)
         time_line = range(demi, len(frame)-demi, int(self.pitch_step*self.samplerate()))
         self.buffer = frame[time_line[-1]+demi:]
-        self.confidence += [confidence for confidence, _ in getPitch([list(frame[t-demi:t+demi])
-                                                                             for t in time_line], self.samplerate(),
-                                                                            self.pitch_min, self.pitch_max,
-                                                                            self.yin_threshold_harmo)]
+        pitch = getPitch([list(frame[t-demi:t+demi]) for t in time_line], self.samplerate(), self.pitch_min, self.pitch_max,
+                     self.yin_threshold_harmo)
+        z = map(list, zip(*pitch))
+        self.confidence += z[0]
+        self.pitch += z[1]
 
         return frames, eod
 
@@ -88,8 +91,20 @@ class IRITMonopoly(Analyzer):
 
         :return:
         """
-        segList = monopoly(self.confidence, 1.0/self.pitch_step, self.wLen, self.wStep)
+        self.pitch = zip(arange(self.pitch_step, len(self.pitch) * self.pitch_step, self.pitch_step)-self.pitch_step/2,
+                         self.pitch)
 
+        pitches = self.new_result(data_mode='value', time_mode='framewise')
+        pitches.id_metadata.id += '.' + 'pitch'
+        pitches.id_metadata.name += ' ' + 'Pitch'
+
+        pitches.data_object.value = self.pitch
+
+        self.add_result(pitches)
+
+        segList= fusion(monopoly(self.confidence, 1.0/self.pitch_step, self.wLen, self.wStep))
+        #print segList
+        #print fusion(segList)
         label= {True: "Mono", False: "Poly"}
         segs = self.new_result(data_mode='label', time_mode='segment')
         segs.id_metadata.id += '.' + 'segments'
@@ -97,15 +112,30 @@ class IRITMonopoly(Analyzer):
 
         segs.data_object.label_metadata.label = label
 
-        segs.data_object.label = array([s[2] for s in segList])
         segs.data_object.time = array([s[0] for s in segList])
         segs.data_object.duration = array([s[1] - s[0] for s in segList])
-
-        segs.data_object.merge_segment()
-
+        segs.data_object.label = array([s[2] for s in segList])
         self.add_result(segs)
 
         return
+
+
+def fusion(segs):
+    segments = []
+    last_start = segs[0][0]
+    last_stop = segs[0][1]
+    last_label = segs[0][2]
+    for start, stop, label in segs:
+        if label != last_label :
+            segments += [(last_start, last_stop, last_label)]
+            last_start = start
+            last_label = label
+
+        last_stop = stop
+
+    segments += [(last_start, last_stop, last_label)]
+
+    return segments
 
 
 def monopoly(yin_confidence, sr, len_decision, step_decision):
@@ -191,16 +221,3 @@ def weibull_likelihood(m, v, theta1, theta2, beta1, beta2, delta):
     pxy = c0+(beta1/delta-1)*c1+(beta2/delta-1)*c2+(delta-2)*log(b1+b2)+log(somme1+1/delta-1)-somme1
 
     return mean(pxy)
-
-
-
-# Generate Grapher for IRITMonopoly analyzer
-from timeside.core.grapher import DisplayAnalyzer
-
-DisplayMonopoly = DisplayAnalyzer.create(
-    analyzer=IRITMonopoly,
-    result_id='irit_monopoly.segments',
-    grapher_id='grapher_irit_monopoly_segments',
-    grapher_name='Mono/Polyphony segmentation',
-    background='waveform',
-    staging=False)
