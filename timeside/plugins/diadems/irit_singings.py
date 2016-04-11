@@ -20,8 +20,8 @@
 # Author: Maxime Le Coz <lecoz@irit.fr>
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
-from timeside.plugins.analyzer.diadems.irit_monopoly import IRITMonopoly
-from timeside.plugins.analyzer.diadems.irit_harmo_tracking import IRITHarmoTracker
+from timeside.plugins.diadems.irit_monopoly import IRITMonopoly
+from timeside.plugins.diadems.irit_harmo_tracking import IRITHarmoTracker
 from timeside.core.preprocessors import frames_adapter
 from numpy import median, mean, linspace, argmin, argmax, array
 from numpy.fft import rfft
@@ -31,7 +31,7 @@ from collections import Counter
 class IRITSinging(Analyzer):
     implements(IAnalyzer)
 
-    def __init__(self, blocksize=None, stepsize=None):
+    def __init__(self):
         super(IRITSinging, self).__init__()
         self.parents['irit_monopoly'] = IRITMonopoly()
         self.parents['irit_harmo_tracking'] = IRITHarmoTracker()
@@ -53,7 +53,7 @@ class IRITSinging(Analyzer):
     @staticmethod
     @interfacedoc
     def name():
-        return "IRIT Sinigings detection"
+        return "IRIT Singings detection"
 
     @staticmethod
     @interfacedoc
@@ -96,7 +96,7 @@ class IRITSinging(Analyzer):
 
                     segments_chant += [(start, stop, value >= self.thPoly)]
 
-        label= {True: "Chant", False: "Non Chant"}
+        label= {True: "Singing", False: "Non Singing"}
         segs = self.new_result(data_mode='label', time_mode='segment')
         segs.id_metadata.id += '.' + 'segments'
         segs.id_metadata.name += ' ' + 'Segments'
@@ -185,3 +185,15 @@ def has_vibrato(serie, sampling_rate, minimum_frequency=4, maximum_frequency=8, 
         vibrato = True
 
     return vibrato
+
+
+# Generate Grapher for IRITSinging analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+DisplayMonopoly = DisplayAnalyzer.create(
+    analyzer=IRITSinging,
+    result_id='irit_singing.segments',
+    grapher_id='grapher_irit_singing_segments',
+    grapher_name='Singings detection',
+    background='waveform',
+    staging=False)

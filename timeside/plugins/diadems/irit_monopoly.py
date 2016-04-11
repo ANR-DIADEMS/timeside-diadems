@@ -22,13 +22,13 @@
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
 from numpy import mean, var, array, log, arange
-from timeside.plugins.analyzer.yin import getPitch
+from timeside.plugins.diadems.yin import getPitch
 from timeside.core.preprocessors import frames_adapter
 
 class IRITMonopoly(Analyzer):
     implements(IAnalyzer)
 
-    def __init__(self, blocksize=None, stepsize=None):
+    def __init__(self):
         super(IRITMonopoly, self).__init__()
         self.wLen = 1.0
         self.wStep = 0.5
@@ -41,7 +41,6 @@ class IRITMonopoly(Analyzer):
         self.pitch_max = None
         self.yin_threshold_harmo=0.3
 
-
     @interfacedoc
     def setup(self, channels=None, samplerate=None, blocksize=None,
               totalframes=None):
@@ -50,7 +49,6 @@ class IRITMonopoly(Analyzer):
 
         if self.pitch_max is None:
             self.pitch_max = samplerate / 2
-
 
 
     @staticmethod
@@ -102,7 +100,7 @@ class IRITMonopoly(Analyzer):
 
         self.add_result(pitches)
 
-        segList= fusion(monopoly(self.confidence, 1.0/self.pitch_step, self.wLen, self.wStep))
+        segList= monopoly(self.confidence, 1.0/self.pitch_step, self.wLen, self.wStep)
         #print segList
         #print fusion(segList)
         label= {True: "Mono", False: "Poly"}
@@ -115,27 +113,28 @@ class IRITMonopoly(Analyzer):
         segs.data_object.time = array([s[0] for s in segList])
         segs.data_object.duration = array([s[1] - s[0] for s in segList])
         segs.data_object.label = array([s[2] for s in segList])
+        segs.data_object.merge_segment()
         self.add_result(segs)
 
         return
 
+# TODO : Delete after validation : it has been replaced by data_object.merge_segment()
+## def fusion(segs):
+##     segments = []
+##     last_start = segs[0][0]
+##     last_stop = segs[0][1]
+##     last_label = segs[0][2]
+##     for start, stop, label in segs:
+##         if label != last_label :
+##             segments += [(last_start, last_stop, last_label)]
+##             last_start = start
+##             last_label = label
 
-def fusion(segs):
-    segments = []
-    last_start = segs[0][0]
-    last_stop = segs[0][1]
-    last_label = segs[0][2]
-    for start, stop, label in segs:
-        if label != last_label :
-            segments += [(last_start, last_stop, last_label)]
-            last_start = start
-            last_label = label
+##         last_stop = stop
 
-        last_stop = stop
+##     segments += [(last_start, last_stop, last_label)]
 
-    segments += [(last_start, last_stop, last_label)]
-
-    return segments
+##     return segments
 
 
 def monopoly(yin_confidence, sr, len_decision, step_decision):
@@ -221,3 +220,15 @@ def weibull_likelihood(m, v, theta1, theta2, beta1, beta2, delta):
     pxy = c0+(beta1/delta-1)*c1+(beta2/delta-1)*c2+(delta-2)*log(b1+b2)+log(somme1+1/delta-1)-somme1
 
     return mean(pxy)
+
+
+# Generate Grapher for IRITMonopoly analyzer
+from timeside.core.grapher import DisplayAnalyzer
+
+DisplayMonopoly = DisplayAnalyzer.create(
+    analyzer=IRITMonopoly,
+    result_id='irit_monopoly.segments',
+    grapher_id='grapher_irit_monopoly_segments',
+    grapher_name='Mono/Polyphony segmentation',
+    background='waveform',
+    staging=False)
