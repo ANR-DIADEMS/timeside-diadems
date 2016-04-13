@@ -103,7 +103,7 @@ class IRITMonopoly(Analyzer):
         segList= monopoly(self.confidence, 1.0/self.pitch_step, self.wLen, self.wStep)
         #print segList
         #print fusion(segList)
-        label= {True: "Mono", False: "Poly"}
+        label= {1: "Mono", 0: "Poly"}
         segs = self.new_result(data_mode='label', time_mode='segment')
         segs.id_metadata.id += '.' + 'segments'
         segs.id_metadata.name += ' ' + 'Segments'
