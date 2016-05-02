@@ -33,5 +33,6 @@ RUN pip install -r requirements.txt
 ADD . /srv/src/timeside-diadems/
 RUN pip install -e .
 
-
+WORKDIR /srv/app
+EXPOSE 8000
 
