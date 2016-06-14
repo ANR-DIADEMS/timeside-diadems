@@ -37,6 +37,7 @@ class IRITTempogram(Analyzer):
         self.fmin = 0.1
         self.fmax = 5.0
         self.nbin = 512
+        self.energy_wlen = 0.1
 
     @interfacedoc
     def setup(self, channels=None, samplerate=None, blocksize=None, totalframes=None):
@@ -48,12 +49,11 @@ class IRITTempogram(Analyzer):
         :param totalframes:
         :return:
         """
-        super(IRITTempogram, self).setup(
-            channels, samplerate, blocksize, totalframes)
+        super(IRITTempogram, self).setup(channels, samplerate, blocksize, totalframes)
         self.input_blocksize = int(self.wLen * samplerate)
         self.input_stepsize = int(self.wStep * samplerate)
-        self.samples = []
         self.freqline = linspace(self.fmin, self.fmax, self.nbin)
+        self.timeline = arange(0, totalframes, self.input_stepsize)
 
     @staticmethod
     @interfacedoc
@@ -74,7 +74,6 @@ class IRITTempogram(Analyzer):
         return "Tempogram matrix"
 
     def process(self, frames, eod=False):
-        self.samples += list(frames[:, 0])
         return frames, eod
 
     def post_process(self):
@@ -82,39 +81,27 @@ class IRITTempogram(Analyzer):
 
         :return:
         """
+        samples = self.parents['irit_diverg2'].parents['waveform'].results['waveform_analyzer'].data
         res_irit_diverg = self.parents['irit_diverg2'].results
         segList = res_irit_diverg['irit_diverg2.segments'].time
-        segList = add_weights(segList, self.samples, self.samplerate(), 0.1)
+        segList = add_weights(segList, samples, self.samplerate(), self.energy_wlen)
 
         w = self.wLen / 2
-        end = segList[-1][0]
-        tempogram = [get_tempo_spectrum(getBoundariesInInterval(t-w, t+w, segList), self.freqline)
-                     for t in arange(w, end - w, self.wStep)]
-
-        res_tempo = self.new_result(data_mode='value', time_mode='framewise')
-        res_tempo.data_object.value = tempogram
-        res_tempo.data_object.y_value = self.freqline*60  # Convert in bpm
-
-        self.add_result(res_tempo)
-
-
-        """
-        from pylab import savefig, imshow
-        #for c in segList :
-        #    plot([c[0], c[0]], [0, c[1]])
-
-        imshow(array(tempogram).T, aspect="auto", origin="lower", extent=[0, len(self.samples)/self.samplerate(),
-                                                                 self.fmin, self.fmax])
-        savefig('toto1.png')
-        """
-
+        if len(self.timeline) > 0:
+            timeline = self.timeline/float(self.samplerate())
+            tempogram = [get_tempo_spectrum(getBoundariesInInterval(t-w, t+w, segList), self.freqline) for t in timeline]
+            res_tempo = self.new_result(data_mode='value', time_mode='framewise')
+            res_tempo.data_object.value = tempogram
+            res_tempo.data_object.y_value = self.freqline*60  # Convert in bpm
+            self.add_result(res_tempo)
         return
 
 
 def getBoundariesInInterval(start, stop, boundaries):
     """
     """
-    return [t for t in boundaries if start <= t[0] <= stop]
+    l = [t for t in boundaries if start <= t[0] <= stop]
+    return l
 
 
 def add_weights(boundaries, data, fe, w_len):
