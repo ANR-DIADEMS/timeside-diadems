@@ -23,7 +23,9 @@ from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
 from numpy import arange, inf, prod, diag, cov, log, zeros, argmax, frombuffer, hamming, fft, dot, array, ones,\
     percentile, concatenate
-from multiprocessing import Process, Queue, Array
+from multiprocessing import Queue, Array
+from multiprocessing.dummy import Process
+
 from ctypes import c_double
 from timeside.core.preprocessors import frames_adapter
 from timeside.plugins.analyzer.utils import melFilterBank
@@ -378,5 +380,5 @@ DisplayIritTempogram = DisplayAnalyzer.create(
     analyzer=IRITDECAP,
     result_id='irit_sinnging_turns',
     grapher_id='grapher_irit_singingturns',
-    grapher_name='SINGERS',
+    grapher_name='Irit Singing turns',
     staging=False)
