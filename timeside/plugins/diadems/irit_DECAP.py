@@ -378,7 +378,7 @@ from timeside.core.grapher import DisplayAnalyzer
 
 DisplayIritTempogram = DisplayAnalyzer.create(
     analyzer=IRITDECAP,
-    result_id='irit_sinnging_turns',
+    result_id='irit_singing_turns',
     grapher_id='grapher_irit_singingturns',
-    grapher_name='Irit Singing turns',
+    grapher_name='Singings turns',
     staging=False)
