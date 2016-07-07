@@ -20,4 +20,4 @@ notebook:
     - src
   ports:
     - "8888:8888"
-  command: sh -c "jupyter notebook --no-browser --ip=0.0.0.0"
+  command: sh -c "jupyter notebook --no-browser --ip=0.0.0.0 --notebook-dir=/srv/src/timeside-diadems"
