@@ -163,7 +163,8 @@ class IRITDECAP(Analyzer):
         segments = sorted(map(lambda x: (x[0]*self.wStep, x[1]*self.wStep, x[2]), segments), key=lambda x:x[0])
 
         segs = self.new_result(data_mode='label', time_mode='segment')
-        segs.data_object.label_metadata.label = list(set(v[2] for v in segments))
+        label = set([v[2] for v in segments])
+        segs.data_object.label_metadata.label = {lab: str(lab) for lab in label}
         segs.data_object.time = array([s[0] for s in segments])
         segs.data_object.duration = array([s[1] - s[0] for s in segments])
         segs.data_object.label = array([s[2] for s in segments])
