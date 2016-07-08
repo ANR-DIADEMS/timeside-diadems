@@ -68,7 +68,7 @@ class IRITDECAP(Analyzer):
     @staticmethod
     @interfacedoc
     def id():
-        return "irit_decap"
+        return "irit_singing_turns"
 
     @staticmethod
     @interfacedoc
