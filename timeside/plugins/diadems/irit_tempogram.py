@@ -82,6 +82,9 @@ class IRITTempogram(Analyzer):
         :return:
         """
         samples = self.parents['irit_diverg2'].parents['waveform'].results['waveform_analyzer'].data
+        # Downmix to mono
+        if samples.ndim > 1:
+            samples = samples.mean(axis=-1)
         res_irit_diverg = self.parents['irit_diverg2'].results
         segList = res_irit_diverg['irit_diverg2.segments'].time
         segList = add_weights(segList, samples, self.samplerate(), self.energy_wlen)
