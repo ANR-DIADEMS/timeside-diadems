@@ -100,48 +100,45 @@ def segmentFromValues(values, offset=0):
 # Double emploi avec le calcul mfcc d'aubio. Voir pour la fusion...
 #                         Maxime
 
-def melFilterBank(nbFilters, fftLen, sr):
-    '''
+def melFilterBank(nb_filters, fft_len, sampling_rate, add_energy=False):
+    """
     Grenerate a Mel Filter-Bank
 
     Args :
-        - nbFilters  : Number of filters.
-        - fftLen     : Length of the frequency range.
-        - sr         : Sampling rate of the signal to filter.
+        - nb_filters  : Number of filters.
+        - fft_len     : Length of the frequency range.
+        - sampling_rate         : Sampling rate of the signal to filter.
     Returns :
-        - filterbank : fftLen x nbFilters matrix containing one filter by column.
+        - filter_bank : fftLen x nbFilters matrix containing one filter by column.
                         The filter bank can be applied by matrix multiplication
                         (Use numpy *dot* function).
-    '''
-    fh = float(sr) / 2.0
-    mh = 2595 * np.log10(1 + fh / 700)
+    """
 
-    step = mh / nbFilters
+    fh = float(sampling_rate)/2.0
+    mh = 2595.0*np.log10(1.0+fh/700.0)
+    step = mh/(nb_filters+1)
+    nb_obs = nb_filters
+    if add_energy:
+        nb_obs += 1
+    m_centers = np.arange(step, mh, step)
+    f_pos = [0]+[700.0*(10**(m/2595.0)-1.0) for m in m_centers]+[fh]
+    if add_energy:
+        filter_bank = np.zeros((fft_len, nb_obs+1))
+        filter_bank[:, 0] = [1.0/float(fft_len)]*fft_len
+    else:
+        filter_bank = np.zeros((fft_len, nb_obs))
 
-    mcenter = np.arange(step, mh, step)
-
-    fcenter = 700 * (10 ** (mcenter / 2595) - 1)
-
-    filterbank = np.zeros((fftLen, nbFilters))
-
-    for i, _ in enumerate(fcenter):
-
-        if i == 0:
-            fmin = 0.0
+    for i in range(1,nb_filters+1):
+        fmin = f_pos[i-1]
+        fmax = f_pos[i+1]
+        imin = np.ceil(fmin/fh*fft_len)
+        imax = np.ceil(fmax/fh*fft_len)
+        if add_energy:
+            filter_bank[imin:imax, i] = triangle(imax-imin)
         else:
-            fmin = fcenter[i - 1]
+            filter_bank[imin:imax, i-1] = triangle(imax-imin)
 
-        if i == len(fcenter) - 1:
-            fmax = fh
-        else:
-            fmax = fcenter[i + 1]
-
-        imin = np.ceil(fmin / fh * fftLen)
-        imax = np.ceil(fmax / fh * fftLen)
-
-        filterbank[imin:imax, i] = triangle(imax - imin)
-
-    return filterbank
+    return filter_bank
 
 
 def triangle(length):

@@ -192,21 +192,21 @@ class IRITSpeech4Hz(Analyzer):
         self.add_result(segs)
 
         # Median filter on decision
-        segs = self.new_result(data_mode='label', time_mode='segment')
-        segs.id_metadata.id += '.' + 'segments_median'
-        segs.id_metadata.name += ' ' + 'Segments after Median filtering'
+        med_segs = self.new_result(data_mode='label', time_mode='segment')
+        med_segs.id_metadata.id += '.' + 'segments_median'
+        med_segs.id_metadata.name += ' ' + 'Segments after Median filtering'
 
-        segs.data_object.label_metadata.label = label
+        med_segs.data_object.label_metadata.label = label
 
-        segs.data_object.label = [convert[s[2]] for s in segList_filt]
-        segs.data_object.time = [(np.float(s[0]) * self.input_stepsize /
+        med_segs.data_object.label = [convert[s[2]] for s in segList_filt]
+        med_segs.data_object.time = [(np.float(s[0]) * self.input_stepsize /
                                   self.input_samplerate)
                                  for s in segList_filt]
-        segs.data_object.duration = [(np.float(s[1] - s[0] + 1) * self.input_stepsize /
+        med_segs.data_object.duration = [(np.float(s[1] - s[0] + 1) * self.input_stepsize /
                                       self.input_samplerate)
                                      for s in segList_filt]
 
-        self.add_result(segs)
+        self.add_result(med_segs)
 
         return
 

@@ -1,44 +1,23 @@
+sudo: required
+
 language: python
-python:
-  - "2.7"
 
-#virtualenv:
-# system_site_packages: true
+services:
+  - docker
 
-# command to prepare the system to install prerequisites or dependencies
-before_install:
-  - sudo add-apt-repository -y ppa:donk/gstreamer
-  - sudo apt-get -qq update
-  - export DEBIAN_PACKAGES=$(egrep -v "^\s*(#|$)" debian-requirements.txt)
-  - sudo apt-get install -qq $DEBIAN_PACKAGES 
+env:
+  DOCKER_COMPOSE_VERSION: 1.5.2
 
-# Install conda
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-# Useful for debugging any issues with conda
-  - conda info -a
-# Install binary dependencies with conda
-  - echo $TRAVIS_PYTHON_VERSION
-  - conda create -q -n test-environment -c thomasfillon -c piem --file conda-requirements.txt python=$TRAVIS_PYTHON_VERSION
-  - source activate test-environment
-
-# Install TimeSide
 install:
- - pip install -r requirements.txt
+  - docker-compose --version
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+  - docker-compose --version
+  - docker-compose build app
 
-
-# command to run tests
-before_script:
- - pip install -U coverage
- - pip install python-coveralls
 
 script:
- - python -c"import timeside.core; timeside.core.processor.list_processors()"
- - coverage run --source=timeside.plugins.diadems setup.py test
-
-after_success:
- - coveralls
+  - docker-compose run app python -c"import timeside.core; timeside.core.list_processors()"
+  - docker-compose run app sh -c "cd /srv/src/timeside-diadems; pip install -U coverage; coverage run --source=timeside.plugins.diadems setup.py test"
