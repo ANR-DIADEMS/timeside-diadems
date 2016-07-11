@@ -287,7 +287,7 @@ class LAMVocategory(Analyzer):
     
     
     ## Computing length distribution of partials
-    print '*** Computing length distribution o…’f partials       
+    print '*** Computing length distribution of partials'   
                 
     seuilBruitFond=np.mean(Pxx_st)*coeffSeuilBruitFond
 	        # Minimal threshold on background noise
