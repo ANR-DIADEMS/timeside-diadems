@@ -62,7 +62,7 @@ class LAMVocategory(Analyzer):
   implements(IAnalyzer)
   
   @interfacedoc
-  def __init__(self, step_sec=5, durationLim=60*1000):
+  def __init__(self, step_sec=5, durationLim=60*1):
     super(LAMVocategory, self).__init__()
     self.step_sec = step_sec
     self.durationLim = durationLim
@@ -969,8 +969,8 @@ from timeside.core.grapher import DisplayAnalyzer
 DisplayLAMVocategory = DisplayAnalyzer.create(
     analyzer=LAMVocategory,
     analyzer_parameters={},
-    result_id='lam_vocategory_result',
-    grapher_id='grapher_lam_vocategory_result',
-    grapher_name='LAM Vocategory',
+    result_id='lam_vocategory.vocal_class_6c',
+    grapher_id='grapher_lam_vocategory_6categories',
+    grapher_name='LAM Vocategory 6c',
     background='waveform',
     staging=False)
