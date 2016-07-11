@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 import sys
 from setuptools.command.test import test as TestCommand
 
@@ -56,7 +56,6 @@ setup(
         'pyannote.algorithms',
         'pyannote.metrics'
         ],
-    # PyPI
     name='TimeSide-Diadems',
     url='https://github.com/ANR-DIADEMS/timeside-diadems',
     description="TimeSide extensions developped during the Diadems project",
@@ -73,5 +72,11 @@ setup(
    # Tests
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
+    ext_modules=[Extension('timeside.plugins.diadems.yin',
+                           ['timeside/plugins/diadems/yin/pitch_yin.c',
+                            'timeside/plugins/diadems/yin/pitchyin.c']),
+                 Extension('timeside.plugins.diadems.diverg',
+                           ['timeside/plugins/diadems/diverg/diverg.c',
+                            'timeside/plugins/diadems/diverg/subdiv.c'])],
     )
 
