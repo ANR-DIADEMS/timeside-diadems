@@ -5,3 +5,4 @@ pyannote.core
 pyannote.features
 pyannote.algorithms
 pyannote.metrics
+peakutils

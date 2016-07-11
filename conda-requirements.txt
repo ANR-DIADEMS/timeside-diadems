@@ -5,3 +5,4 @@ nltk=3.1=py27_0
 pandas=0.17.1=np110py27_0
 scikit-learn=0.17=np110py27_2
 numexpr
+orange
