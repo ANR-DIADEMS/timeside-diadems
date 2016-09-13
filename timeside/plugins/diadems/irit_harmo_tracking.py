@@ -239,7 +239,7 @@ class IRITHarmoTracker(Analyzer):
     def post_process(self):
 
 
-        res = self.new_result(time_mode='global')
+        res = self.new_result(data_mode='custom', time_mode='global')
         res.data_object.value = self.trackings
         self.add_result(res)
         return
