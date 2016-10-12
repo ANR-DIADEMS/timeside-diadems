@@ -100,11 +100,11 @@ class IRITSinging(Analyzer):
         segs.id_metadata.id += '.' + 'segments'
         segs.id_metadata.name += ' ' + 'Segments'
 
-        segs.data_object.label_metadata.label = int(label)
+        segs.data_object.label_metadata.label = label
 
         segs.data_object.time = array([s[0] for s in segments_chant])
         segs.data_object.duration = array([s[1] - s[0] for s in segments_chant])
-        segs.data_object.label = array([s[2] for s in segments_chant])
+        segs.data_object.label = array([int(s[2]) for s in segments_chant])
         self.add_result(segs)
 
 
