@@ -24,7 +24,7 @@
 from timeside.core import implements, interfacedoc, get_processor, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 
-from timeside.core.tools.parameters import Enum, HasTraits, Float, Bool
+from timeside.core.tools.parameters import store_parameters, Enum, HasTraits, Float, Bool
 
 import numpy as np
 import pickle
@@ -39,6 +39,7 @@ class GMM:
     """
     Gaussian Mixture Model
     """
+
     def __init__(self, weights, means, vars):
         self.weights = weights
         self.means = means
@@ -51,9 +52,9 @@ class GMM:
                       - 2 * np.dot(x, (self.means / self.vars).T)
                       + np.dot(x ** 2, (1.0 / self.vars).T))
         + np.log(self.weights)
-        m = np.amax(llh,1)
+        m = np.amax(llh, 1)
         dif = llh - np.atleast_2d(m).T
-        return m + np.log(np.sum(np.exp(dif),1))
+        return m + np.log(np.sum(np.exp(dif), 1))
 
 
 def slidewinmap(lin, winsize, func):
@@ -69,12 +70,13 @@ def slidewinmap(lin, winsize, func):
     winsize: size of the sliding windows in samples (int)
     func: function to be mapped on sliding windows
     """
-    tmpin = ([lin[0]] * (winsize/2)) + list(lin) + ([lin[-1]] * (winsize -1 - winsize/2))
+    tmpin = ([lin[0]] * (winsize / 2)) + list(lin) + ([lin[-1]] * (winsize - 1 - winsize / 2))
     lout = []
     for i in xrange(len(lin)):
-        lout.append(func(tmpin[i:(i+winsize)]))
+        lout.append(func(tmpin[i:(i + winsize)]))
     assert(len(lin) == len(lout))
     return lout
+
 
 def dilatation(lin, winsize):
     """
@@ -82,17 +84,20 @@ def dilatation(lin, winsize):
     """
     return slidewinmap(lin, winsize, max)
 
+
 def erosion(lin, winsize):
     """
     morphological erosion
     """
     return slidewinmap(lin, winsize, min)
 
+
 def smooth(lin, winsize):
     """
     sliding mean
     """
     return slidewinmap(lin, winsize, np.mean)
+
 
 class LimsiSad(Analyzer):
     """
@@ -178,7 +183,23 @@ class LimsiSad(Analyzer):
     """
     implements(IAnalyzer)
 
+    # Define parameters schema
+    _schema = {"type": "object",
+               "properties": {
+                   "sad_model": {"type": "string",
+                                 "enum": ['etape', 'maya']
+                                 },
+                   "dews": {"type": "number"},
+                   "speech_threshold": {"type": "number"},
+                   "dllh_min": {"type": "number"},
+                   "dllh_max": {"type": "number"},
+                   "adapt": {"type": "boolean"},
+                   "exclude": {"type": "number"},
+                   "keep": {"type": "number"},
+               },
+               }
    # Define Parameters
+
     class _Param(HasTraits):
         sad_model = Enum('etape', 'maya')
         dews = Float
@@ -189,8 +210,9 @@ class LimsiSad(Analyzer):
         exclude = Float
         keep = Float
 
+    @store_parameters
     def __init__(self, sad_model='etape', dews=0.2, speech_threshold=1.,
-                 dllh_min = -10., dllh_max = 10., adapt = False, exclude = 0.01, keep = 0.20):
+                 dllh_min=-10., dllh_max=10., adapt=False, exclude=0.01, keep=0.20):
         """
         Parameters:
         ----------
@@ -237,7 +259,7 @@ class LimsiSad(Analyzer):
                         'zcr: ZCR blockSize=1024 stepSize=256']
         yaafe_analyzer = get_processor('yaafe')
         self.parents['yaafe'] = yaafe_analyzer(feature_plan=feature_plan,
-                                                input_samplerate=self.force_samplerate)
+                                               input_samplerate=self.force_samplerate)
 
         # informative parameters
         # these are not really taken into account by the system
@@ -298,7 +320,7 @@ class LimsiSad(Analyzer):
 
         # compute log likelihood difference
         res = 0.5 + 0.5 * (self.gmms[0].llh(features) - self.gmms[1].llh(features))
-        ws = int(self.dews * float(self.input_samplerate ) / self.input_stepsize)
+        ws = int(self.dews * float(self.input_samplerate) / self.input_stepsize)
 
         if self.adapt:
             # perform temporal smoothing
@@ -314,19 +336,19 @@ class LimsiSad(Analyzer):
             x = features[lowLLR]
             m = x.mean(0)
             v = ((x - m) ** 2).mean(0)
-            nonspeech = GMM([1], m.reshape(1,-1), v.reshape(1,-1))
+            nonspeech = GMM([1], m.reshape(1, -1), v.reshape(1, -1))
 
             x = features[highLLR]
             m = x.mean(0)
             v = ((x - m) ** 2).mean(0)
-            speech = GMM([1], m.reshape(1,-1), v.reshape(1,-1))
+            speech = GMM([1], m.reshape(1, -1), v.reshape(1, -1))
 
             # compute log likelihood difference using new models
             res = 0.5 + 0.5 * (speech.llh(features) - nonspeech.llh(features))
 
         # bounds log likelihood difference
         if self.dllh_min is not None and self.dllh_max is not None:
-            res = np.minimum(np.maximum(res,  self.dllh_min), self.dllh_max)
+            res = np.minimum(np.maximum(res, self.dllh_min), self.dllh_max)
 
         # performs dilation, erosion, erosion, dilatation
         deed_llh = dilatation(erosion(erosion(dilatation(res, ws), ws), ws), ws)

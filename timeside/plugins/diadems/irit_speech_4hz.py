@@ -29,7 +29,7 @@ from numpy.fft import rfft
 from scipy.signal import firwin, lfilter
 from timeside.core.preprocessors import frames_adapter
 
-from timeside.core.tools.parameters import Float, HasTraits
+from timeside.core.tools.parameters import store_parameters, Float, HasTraits
 
 
 class IRITSpeech4Hz(Analyzer):
@@ -55,7 +55,7 @@ class IRITSpeech4Hz(Analyzer):
     class _Param(HasTraits):
         medfilt_duration = Float()
 
-    @interfacedoc
+    @store_parameters
     def __init__(self, medfilt_duration=5):
         super(IRITSpeech4Hz, self).__init__()
         self.energy4hz = []
@@ -200,11 +200,11 @@ class IRITSpeech4Hz(Analyzer):
 
         med_segs.data_object.label = [convert[s[2]] for s in segList_filt]
         med_segs.data_object.time = [(np.float(s[0]) * self.input_stepsize /
-                                  self.input_samplerate)
-                                 for s in segList_filt]
-        med_segs.data_object.duration = [(np.float(s[1] - s[0] + 1) * self.input_stepsize /
                                       self.input_samplerate)
                                      for s in segList_filt]
+        med_segs.data_object.duration = [(np.float(s[1] - s[0] + 1) * self.input_stepsize /
+                                          self.input_samplerate)
+                                         for s in segList_filt]
 
         self.add_result(med_segs)
 

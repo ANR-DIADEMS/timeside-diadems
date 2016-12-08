@@ -33,15 +33,16 @@ from pyannote.core import Annotation
 from pyannote.algorithms.clustering.bic import BICClustering
 
 from timeside.core.tools.parameters import HasTraits, Float, Enum
+from timeside.core.tools.parameters import store_parameters
 
 
 def gauss_div(data, winsize):
     ret = []
-    for i in xrange(winsize , len(data) - winsize +1):
-        w1 = data[(i-winsize):i,:]
-        w2 = data[i:(i+winsize),:]
-        meandiff = np.mean(w1, axis = 0) - np.mean(w2, axis = 0)
-        invstdprod = 1. / (np.std(w1, axis = 0) * np.std(w2, axis = 0))
+    for i in xrange(winsize, len(data) - winsize + 1):
+        w1 = data[(i - winsize):i, :]
+        w2 = data[i:(i + winsize), :]
+        meandiff = np.mean(w1, axis=0) - np.mean(w2, axis=0)
+        invstdprod = 1. / (np.std(w1, axis=0) * np.std(w2, axis=0))
         ret.append(np.sum(meandiff * meandiff * invstdprod))
 
     return ret
@@ -56,11 +57,11 @@ def segment(data, minsize):
     if am <= minsize:
         ret1 = ([0] * am)
     else:
-        ret1 = segment(data[:(am-minsize)], minsize) + ([0] * minsize)
+        ret1 = segment(data[:(am - minsize)], minsize) + ([0] * minsize)
     if (am + minsize - 1) >= len(data):
         ret2 = ([0] * (len(data) - am - 1))
     else:
-        ret2 = ([0] * minsize) + segment(data[(am+minsize+1):], minsize)
+        ret2 = ([0] * minsize) + segment(data[(am + minsize + 1):], minsize)
     return (ret1 + [1] + ret2)
 
 
@@ -71,10 +72,10 @@ class LimsiDiarization(Analyzer):
     class _Param(HasTraits):
         sad_model = Enum('etape', 'maya')
         gdiff_win_size_sec = Float
-        min_seg_size_sec = Float 
+        min_seg_size_sec = Float
         bic_penalty_coeff = Float
 
-
+    @store_parameters
     def __init__(self, sad_model='etape', gdiff_win_size_sec=5.,
                  min_seg_size_sec=2.5, bic_penalty_coeff=0.5):
         super(LimsiDiarization, self).__init__()
@@ -83,7 +84,7 @@ class LimsiDiarization(Analyzer):
         self.min_seg_size_sec = min_seg_size_sec
         self.bic_penalty_coeff = bic_penalty_coeff
 
-        sad_analyzer = LimsiSad(sad_model = sad_model)
+        sad_analyzer = LimsiSad(sad_model=sad_model)
         self.sad_analyzer = sad_analyzer
         self.parents['sad_analyzer'] = sad_analyzer
 
@@ -157,17 +158,16 @@ class LimsiDiarization(Analyzer):
         for segval, iframe in zip(seg, frameids):
             if segval == 1:
                 if lastframe is not None:
-                    chunks[pyannotefeat.sliding_window.rangeToSegment(fbegin, iframe-fbegin)] = str(ichunk)
+                    chunks[pyannotefeat.sliding_window.rangeToSegment(fbegin, iframe - fbegin)] = str(ichunk)
                     ichunk += 1
-                fbegin= iframe
-            elif iframe -1 != lastframe:
+                fbegin = iframe
+            elif iframe - 1 != lastframe:
                 if lastframe is not None:
-                    chunks[pyannotefeat.sliding_window.rangeToSegment(fbegin, lastframe-fbegin+1)] = str(ichunk)
-                fbegin= iframe
+                    chunks[pyannotefeat.sliding_window.rangeToSegment(fbegin, lastframe - fbegin + 1)] = str(ichunk)
+                fbegin = iframe
             lastframe = iframe
         if lastframe != fbegin:
-            chunks[pyannotefeat.sliding_window.rangeToSegment(fbegin, lastframe-fbegin+1)] = str(ichunk)
-
+            chunks[pyannotefeat.sliding_window.rangeToSegment(fbegin, lastframe - fbegin + 1)] = str(ichunk)
 
         # performs BIC clustering
         bicClustering = BICClustering(covariance_type='full', penalty_coef=self.bic_penalty_coeff)
@@ -192,11 +192,10 @@ class LimsiDiarization(Analyzer):
                 duration[-1] = t + d - time[-1]
             lastlabel = l
 
-
         # store diarisation result
         diar_res = self.new_result(data_mode='label', time_mode='segment')
-        diar_res.id_metadata.id += '.' + 'speakers' # + name + 'diarisation'
-        diar_res.id_metadata.name += ' ' + 'speaker identifiers' # name + 'diarisation'
+        diar_res.id_metadata.id += '.' + 'speakers'  # + name + 'diarisation'
+        diar_res.id_metadata.name += ' ' + 'speaker identifiers'  # name + 'diarisation'
         diar_res.data_object.label = label
         diar_res.data_object.time = time
         diar_res.data_object.duration = duration
@@ -220,7 +219,7 @@ DisplayLimsiDiarization = DisplayAnalyzer.create(
     staging=False)
 
 DisplayLimsiDiarization = DisplayAnalyzer.create(
-    analyzer=LimsiDiarization, 
+    analyzer=LimsiDiarization,
     analyzer_parameters={'sad_model': 'maya'},
     result_id='limsi_diarization.speakers',
     grapher_id='grapher_limsi_diarization_speakers_maya',
