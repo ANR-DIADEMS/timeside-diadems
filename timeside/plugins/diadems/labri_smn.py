@@ -499,7 +499,7 @@ DisplayLABRI_PMB = DisplayAnalyzer.create(
     grapher_id='grapher_labri_smn_speech',
     grapher_name='Labri Speech Detection',
     background='waveform',
-    staging=False)
+    staging=True)
 
 # Labri Speech/Music/Noise --> Music
 DisplayLABRI_PMB = DisplayAnalyzer.create(
@@ -509,5 +509,5 @@ DisplayLABRI_PMB = DisplayAnalyzer.create(
     grapher_id='grapher_labri_smn_music',
     grapher_name='Labri Music Detection',
     background='waveform',
-    staging=False)
+    staging=True)
 

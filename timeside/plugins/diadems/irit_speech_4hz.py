@@ -220,7 +220,7 @@ Display4hzSpeechSegmentation = DisplayAnalyzer.create(
     grapher_id='grapher_irit_speech_4hz_segments',
     grapher_name='Speech activity - 4hz',
     background='waveform',
-    staging=False)
+    staging=True)
 
 # IRIT 4Hz with median filter
 Display4hzSpeechSegmentation = DisplayAnalyzer.create(

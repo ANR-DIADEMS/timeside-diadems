@@ -138,4 +138,4 @@ DisplayIritTempogram = DisplayAnalyzer.create(
     result_id='irit_tempogram',
     grapher_id='grapher_irit_tempogram',
     grapher_name='Tempogram - Divergence',
-    staging=False)
+    staging=True)
