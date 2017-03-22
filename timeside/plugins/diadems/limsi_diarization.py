@@ -216,7 +216,7 @@ DisplayLimsiDiarization = DisplayAnalyzer.create(
     grapher_id='grapher_limsi_diarization_speakers',
     grapher_name='Speaker diarization (ETAPE)',
     background='waveform',
-    staging=False)
+    staging=True)
 
 DisplayLimsiDiarization = DisplayAnalyzer.create(
     analyzer=LimsiDiarization,
@@ -225,4 +225,4 @@ DisplayLimsiDiarization = DisplayAnalyzer.create(
     grapher_id='grapher_limsi_diarization_speakers_maya',
     grapher_name='Speaker diarization (Mayan)',
     background='waveform',
-    staging=False)
+    staging=True)

@@ -191,10 +191,10 @@ def has_vibrato(serie, sampling_rate, minimum_frequency=4, maximum_frequency=8, 
 # Generate Grapher for IRITSinging analyzer
 from timeside.core.grapher import DisplayAnalyzer
 
-DisplayMonopoly = DisplayAnalyzer.create(
+DisplayIritSinging = DisplayAnalyzer.create(
     analyzer=IRITSinging,
     result_id='irit_singing.segments',
     grapher_id='grapher_irit_singing_segments',
     grapher_name='Singings detection',
     background='waveform',
-    staging=False)
+    staging=True)

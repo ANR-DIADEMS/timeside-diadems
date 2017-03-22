@@ -120,10 +120,10 @@ def getBoundariesInInterval(start, stop, boundaries):
 # Generate Grapher for IRITMusicSNB analyzer
 from timeside.core.grapher import DisplayAnalyzer
 
-DisplayMonopoly = DisplayAnalyzer.create(
+DisplayMusicSNB = DisplayAnalyzer.create(
     analyzer=IRITMusicSNB,
     result_id='irit_music_snb.segments',
     grapher_id='grapher_irit_music_snb_segments',
     grapher_name='Music Detector - Segment Number',
     background='waveform',
-    staging=False)
+    staging=True)

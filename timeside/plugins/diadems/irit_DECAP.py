@@ -377,9 +377,9 @@ def bic_clustering(observations, segments, lambdas, th=90):
 
 from timeside.core.grapher import DisplayAnalyzer
 
-DisplayIritTempogram = DisplayAnalyzer.create(
+DisplayIritSingingTurns = DisplayAnalyzer.create(
     analyzer=IRITDECAP,
     result_id='irit_singing_turns',
     grapher_id='grapher_irit_singingturns',
     grapher_name='Singings turns',
-    staging=False)
+    staging=True)
