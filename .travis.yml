@@ -15,7 +15,8 @@ install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - docker-compose --version
-  - docker-compose build app
+  - docker-compose build app src
+  - docker-compose run src  # build C library
 
 
 script:
