@@ -22,7 +22,7 @@ from __future__ import division
 
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer, IAnalyzer
-from timeside.plugins.analyzer.utils import melFilterBank, computeModulation
+from timeside.plugins.diadems.utils import melFilterBank, computeModulation
 from timeside.plugins.analyzer.utils import segmentFromValues
 import numpy as np
 from numpy.fft import rfft

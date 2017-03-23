@@ -21,7 +21,7 @@
 
 from timeside.core import implements, interfacedoc
 from timeside.core.analyzer import Analyzer
-from timeside.plugins.analyzer.utils import entropy, computeModulation
+from timeside.plugins.diadems.utils import entropy, computeModulation
 from timeside.plugins.analyzer.utils import segmentFromValues
 from timeside.core.api import IAnalyzer
 from numpy import array
