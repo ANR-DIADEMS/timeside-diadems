@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2013 Paul Brossier <piem@piem.org>
+# Copyright (c) 2013-2017 Thomas Fillon <thomas@parisson.com>
 
 # This file is part of TimeSide.
 
@@ -18,26 +19,11 @@
 # along with TimeSide.  If not, see <http://www.gnu.org/licenses/>.
 
 # Author: Paul Brossier <piem@piem.org>
+# Author: Thomas Fillon <thomas@parisson.com>
 
 import numpy as np
 
 MACHINE_EPSILON = np.finfo(np.float32).eps
-
-
-def downsample_blocking(frames, hop_s, dtype='float32'):
-    # downmixing to one channel
-    if len(frames.shape) != 1:
-        downsampled = frames.sum(axis=-1) / frames.shape[-1]
-    else:
-        downsampled = frames
-    # zero padding to have a multiple of hop_s
-    if downsampled.shape[0] % hop_s != 0:
-        pad_length = hop_s + \
-            downsampled.shape[0] / hop_s * hop_s - downsampled.shape[0]
-        downsampled = np.hstack(
-            [downsampled, np.zeros(pad_length, dtype=dtype)])
-    # blocking
-    return downsampled.reshape(downsampled.shape[0] / hop_s, hop_s)
 
 
 def computeModulation(serie, wLen, withLog=True):
@@ -72,27 +58,6 @@ def computeModulation(serie, wLen, withLog=True):
         modul[-w:] = modul[-w - 1]
 
         return modul
-
-
-def segmentFromValues(values, offset=0):
-    '''
-
-    '''
-
-    seg = [offset, -1, values[0]]
-    segList = []
-    for i, v in enumerate(values):
-
-        if not (v == seg[2]):
-            seg[1] = i + offset - 1
-            segList.append(tuple(seg))
-            seg = [i + offset, -1, v]
-
-    seg[1] = i + offset
-    segList.append(tuple(seg))
-
-    return segList
-
 
 # Attention
 # ---------
@@ -131,8 +96,8 @@ def melFilterBank(nb_filters, fft_len, sampling_rate, add_energy=False):
     for i in range(1,nb_filters+1):
         fmin = f_pos[i-1]
         fmax = f_pos[i+1]
-        imin = np.ceil(fmin/fh*fft_len)
-        imax = np.ceil(fmax/fh*fft_len)
+        imin = np.ceil(fmin/fh*fft_len).astype('int')
+        imax = np.ceil(fmax/fh*fft_len).astype('int')
         if add_energy:
             filter_bank[imin:imax, i] = triangle(imax-imin)
         else:
@@ -152,7 +117,7 @@ def triangle(length):
 
     '''
     triangle = np.zeros((1, length))[0]
-    climax = np.ceil(length / 2)
+    climax = np.ceil(length / 2).astype('int')
 
     triangle[0:climax] = np.linspace(0, 1, climax)
     triangle[climax:length] = np.linspace(1, 0, length - climax)
@@ -220,14 +185,3 @@ def entropy(serie, nbins=10, base=np.exp(1), approach='unbiased'):
         sigma = sigma / np.log(base)
         return estimate
 
-
-def nextpow2(value):
-    """Compute the nearest power of two greater or equal to the input value"""
-    if value >= 1:
-        return 2**np.ceil(np.log2(value)).astype(int)
-    elif value > 0:
-        return 1
-    elif value == 0:
-        return 0
-    else:
-        raise ValueError('Value must be positive')

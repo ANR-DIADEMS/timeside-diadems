@@ -28,7 +28,7 @@ from multiprocessing.dummy import Process
 
 from ctypes import c_double
 from timeside.core.preprocessors import frames_adapter
-from timeside.plugins.analyzer.utils import melFilterBank
+from timeside.plugins.diadems.utils import melFilterBank
 
 class IRITDECAP(Analyzer):
     implements(IAnalyzer)
