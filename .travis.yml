@@ -22,3 +22,4 @@ install:
 script:
   - docker-compose run app python -c"import timeside.core; timeside.core.list_processors()"
   - docker-compose run app sh -c "cd /srv/src/timeside-diadems; pip install -U coverage; coverage run --source=timeside.plugins.diadems setup.py test"
+  - docker-compose run app sh -c "cd /srv/src/timeside; pip install -U coverage; coverage run --source=timeside.plugins.diadems tests/test_check_processors.py"
