@@ -49,12 +49,13 @@ setup(
     packages=find_packages(),
     install_requires=[
         'timeside',
+        'matplotlib==1.5.2',
         # Dependencies for limsi_diarization
         'py_sonicvisualiser',
-        'pyannote.core',
+        'pyannote.core==0.13.1',
         'pyannote.features',
         'pyannote.algorithms',
-        'pyannote.metrics'
+        'pyannote.metrics==0.12.1'
         ],
     name='TimeSide-Diadems',
     url='https://github.com/ANR-DIADEMS/timeside-diadems',
