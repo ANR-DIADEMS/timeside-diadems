@@ -23,7 +23,7 @@ WORKDIR /srv/src/timeside-diadems
 # Install binary dependencies with conda
 ADD conda-requirements.txt /srv/src/timeside-diadems/
 
-RUN conda install -c yaafe -c conda-forge --file conda-requirements.txt
+RUN conda install -c conda-forge --file conda-requirements.txt
 
 # Install remaining depencies with pip
 ADD requirements.txt /srv/src/timeside-diadems/
