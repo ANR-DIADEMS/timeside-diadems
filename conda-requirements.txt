@@ -2,9 +2,6 @@
 # $ conda create --name <env> --file <this file>
 # platform: linux-64
 nltk=3.2.2
-pandas=0.19.2
 scikit-learn=0.18.1
 numexpr
-matplotlib=2.0.0
-numpy=1.12.1
-aubio=0.4.4
+aubio

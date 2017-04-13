@@ -45,18 +45,16 @@ KEYWORDS = 'audio analysis features extraction MIR transcoding graph visualize p
 
 setup(
     # Package
-    namespace_packages = ['timeside', 'timeside.plugins'],
-    packages=find_packages(),
+    name='TimeSide-Diadems',
     install_requires=[
         'timeside',
         # Dependencies for limsi_diarization
         'py_sonicvisualiser',
-        'pyannote.core',
+        'pyannote.core==0.13.1',
         'pyannote.features',
         'pyannote.algorithms',
-        'pyannote.metrics'
+        'pyannote.metrics==0.12.1'
         ],
-    name='TimeSide-Diadems',
     url='https://github.com/ANR-DIADEMS/timeside-diadems',
     description="TimeSide extensions developped during the Diadems project",
     long_description=open('README.rst').read(),
