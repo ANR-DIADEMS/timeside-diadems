@@ -129,6 +129,6 @@ DisplayMusicSLN = DisplayAnalyzer.create(
     analyzer=IRITMusicSLN,
     result_id='irit_music_sln.segments',
     grapher_id='grapher_irit_music_sln_segments',
-    grapher_name='Music Detector - Segment Length',
+    grapher_name='Music detection',
     background='waveform',
     staging=False)

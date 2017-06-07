@@ -276,7 +276,7 @@ DisplayLABRI_SING = DisplayAnalyzer.create(
     analyzer_parameters={},
     result_id='labri_singing',
     grapher_id='grapher_labri_singing',
-    grapher_name='Labri singing voice detection',
+    grapher_name='Singing voice detection',
     background='waveform',
     staging=False)
     
