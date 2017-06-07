@@ -118,6 +118,6 @@ DisplayEntropySpeechSegmentation = DisplayAnalyzer.create(
     analyzer=IRITSpeechEntropy,
     result_id='irit_speech_entropy.segments',
     grapher_id='grapher_irit_speech_entropy_segments',
-    grapher_name='Speech activity - Entropy',
+    grapher_name='Speech detection (signal diversity)',
     background='waveform',
     staging=False)

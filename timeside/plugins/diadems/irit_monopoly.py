@@ -229,6 +229,6 @@ DisplayMonopoly = DisplayAnalyzer.create(
     analyzer=IRITMonopoly,
     result_id='irit_monopoly.segments',
     grapher_id='grapher_irit_monopoly_segments',
-    grapher_name='Mono/Polyphony segmentation',
+    grapher_name='Monody/polyphony detection',
     background='waveform',
     staging=False)

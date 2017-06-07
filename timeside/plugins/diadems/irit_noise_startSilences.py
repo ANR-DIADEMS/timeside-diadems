@@ -228,6 +228,6 @@ DisplayIRIT_Start = DisplayAnalyzer.create(
     analyzer=IRITStartSeg,
     result_id='irit_startseg.segments',
     grapher_id='grapher_irit_startseg',
-    grapher_name='Analogous start point',
+    grapher_name='Tape start detection',
     background='waveform',
     staging=False)

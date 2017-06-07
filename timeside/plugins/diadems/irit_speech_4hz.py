@@ -227,6 +227,6 @@ Display4hzSpeechSegmentation = DisplayAnalyzer.create(
     analyzer=IRITSpeech4Hz,
     result_id='irit_speech_4hz.segments_median',
     grapher_id='grapher_irit_speech_4hz_segments_median',
-    grapher_name='Speech activity - 4hz smoothed',
+    grapher_name='Speech detection (syllabic rate)',
     background='waveform',
     staging=False)
