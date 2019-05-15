@@ -27,7 +27,7 @@ from __future__ import division
 from timeside.core import implements, interfacedoc, get_processor, _WITH_AUBIO, _WITH_YAAFE
 from timeside.core.analyzer import Analyzer, IAnalyzer
 
-import numpy as np 
+import numpy as np
 import pickle
 import os.path
 
@@ -49,7 +49,7 @@ def llh(gmm, x):
     m = np.amax(llh,1)
     dif = llh - np.atleast_2d(m).T
     return m + np.log(np.sum(np.exp(dif),1))
-    
+
 
 class LabriSing(Analyzer):
 
@@ -78,7 +78,7 @@ class LabriSing(Analyzer):
         self.parents['yaafe'] = get_processor('yaafe')(feature_plan=feature_plan,
                                                        input_samplerate=self.force_samplerate)
 
-        
+
         self.parents['aubio_temporal'] =get_processor('aubio_temporal')()  # TF: ici on rajoute AubioTemporal() comme parent
 
 
@@ -213,9 +213,9 @@ class LabriSing(Analyzer):
                     label[a]=0
                 if label[a]==0:
                     label[a]=1
-                        
+
         # ENCORE
-        # merge adjacent labels 
+        # merge adjacent labels
         # label
         newnblab=len(debut)
         oldnew=0
@@ -232,11 +232,9 @@ class LabriSing(Analyzer):
             else:
                 oldnew=newnblab;
 
-
-                    
         ########################"
-        # OLD            
-        # post processing : 
+        # OLD
+        # post processing :
         # delete segments < 0.5 s
         #for a in range(len(debut)-2,0,-1):
         #    time = float(fin[a]-debut[a])/100
@@ -279,4 +277,3 @@ DisplayLABRI_SING = DisplayAnalyzer.create(
     grapher_name='Singing voice detection',
     background='waveform',
     staging=False)
-    
